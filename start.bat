@@ -90,11 +90,23 @@ echo   Starting services...
 echo ========================================
 echo.
 
+REM ---- Kill existing processes on ports ----
+echo   Cleaning ports 8000 and 3000...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000.*LISTENING" 2^>nul') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000.*LISTENING" 2^>nul') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+echo   Ports cleaned
+
+REM Start Backend in new window
 start "DX-RAG-Backend" cmd /k "cd /d %cd%\backend && %PYCMD% -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo   Waiting for backend to start...
 ping -n 6 127.0.0.1 >nul
 
+REM Start Frontend in new window
 start "DX-RAG-Frontend" cmd /k "cd /d %cd%\frontend && npm run dev"
 
 echo   Opening browser...
