@@ -1,0 +1,16 @@
+fastapi>=0.104.1,<0.105.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-multipart>=0.0.6
+faiss-cpu>=1.7.0
+numpy>=1.25.0
+sentence-transformers>=2.2.2,<3.0.0
+PyPDF2>=3.0.0
+PyMuPDF>=1.27.2
+python-docx>=0.8.11
+openpyxl>=3.1.0
+openai>=1.1.0,<2.0.0
+aiofiles>=23.2.0
+langchain>=0.1.0
+langchain-text-splitters>=0.0.1
