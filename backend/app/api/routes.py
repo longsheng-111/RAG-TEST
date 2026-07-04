@@ -2,6 +2,7 @@
 API 路由定义 - 文件上传、知识问答、知识库管理、文件管理
 """
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -22,6 +23,32 @@ from app.services.ingest import process_file
 from app.services.qa import qa_query
 
 router = APIRouter(prefix="/api")
+
+# ---- 安全校验 ----
+
+_COLLECTION_NAME_RE = re.compile(r'^[\w一-鿿-]+$')
+
+def _validate_collection_name(name: str, label: str = "知识库名称") -> str:
+    """校验知识库名称，防止注入"""
+    name = name.strip()
+    if not name or len(name) < 2 or len(name) > 50:
+        raise HTTPException(status_code=400, detail=f"{label}需 2-50 个字符")
+    if not _COLLECTION_NAME_RE.match(name):
+        raise HTTPException(status_code=400, detail=f"{label}包含非法字符")
+    return name
+
+
+def _safe_file_path(file_name: str) -> Path:
+    """安全解析文件路径，防止路径穿越"""
+    # 去掉路径分隔符和 .. 穿越
+    safe_name = os.path.basename(file_name)
+    if safe_name != file_name or ".." in file_name or "/" in file_name.replace("\\", "/"):
+        raise HTTPException(status_code=400, detail="文件名包含非法路径字符")
+    full = (Path(settings.upload_dir) / safe_name).resolve()
+    base = Path(settings.upload_dir).resolve()
+    if not str(full).startswith(str(base)):
+        raise HTTPException(status_code=403, detail="路径越权访问被拒绝")
+    return full
 
 # ============================================================
 #  请求/响应模型
@@ -64,9 +91,12 @@ async def upload_file(
     if not file.filename:
         raise HTTPException(status_code=400, detail="未选择文件")
 
-    # 保存文件到 uploads 目录
+    # 校验知识库名称
+    _validate_collection_name(collection_name, "知识库名称")
+
+    # 保存文件到 uploads 目录（安全文件名）
     settings.ensure_dirs()
-    safe_name = Path(file.filename).name
+    safe_name = Path(file.filename).name  # 去掉路径
     dest_path = Path(settings.upload_dir) / safe_name
 
     # 处理同名文件：添加序号
@@ -139,15 +169,7 @@ async def get_collections():
 @router.post("/collections")
 async def create_collection_api(req: CreateCollectionRequest):
     """创建知识库"""
-    name = req.name.strip()
-
-    if not name or len(name) < 2 or len(name) > 50:
-        raise HTTPException(status_code=400, detail="知识库名称需 2-50 个字符")
-
-    # 只允许字母、数字、中文、短横线、下划线
-    import re
-    if not re.match(r'^[\w一-龥-]+$', name):
-        raise HTTPException(status_code=400, detail="知识库名称包含非法字符")
+    name = _validate_collection_name(req.name, "知识库名称")
 
     try:
         return create_collection(name)
@@ -160,10 +182,7 @@ async def create_collection_api(req: CreateCollectionRequest):
 @router.put("/collections/{name}")
 async def rename_collection_api(name: str, req: RenameCollectionRequest):
     """重命名知识库"""
-    new_name = req.new_name.strip()
-
-    if not new_name or len(new_name) < 2 or len(new_name) > 50:
-        raise HTTPException(status_code=400, detail="新名称需 2-50 个字符")
+    new_name = _validate_collection_name(req.new_name, "新名称")
 
     try:
         return rename_collection(name, new_name)
@@ -207,10 +226,10 @@ async def delete_file_api(
     try:
         result = delete_file(file_name, collection_name)
 
-        # 同时尝试删除本地文件
-        local_path = Path(settings.upload_dir) / file_name
+        # 同时尝试删除本地文件（安全路径校验）
+        local_path = _safe_file_path(file_name)
         if local_path.exists():
-            os.remove(local_path)
+            os.remove(str(local_path))
 
         return result
     except Exception as e:
@@ -225,7 +244,7 @@ async def preview_file(
     """预览文件内容（前 5000 字符）"""
     from app.services.ingest import read_text_from_file
 
-    local_path = Path(settings.upload_dir) / file_name
+    local_path = _safe_file_path(file_name)
     if not local_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
