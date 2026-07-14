@@ -5,12 +5,16 @@
 适合当前阶段的轻量级持久化需求，无需引入数据库。
 """
 import json
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from app.core.config import settings
+
+# 会话 ID 格式: sess_ + 16 位 hex
+_SESSION_ID_RE = re.compile(r'^sess_[a-f0-9]{16,}$')
 
 
 class Session:
@@ -97,7 +101,13 @@ class SessionManager:
         self.session_dir.mkdir(parents=True, exist_ok=True)
 
     def _session_path(self, session_id: str) -> Path:
-        return self.session_dir / f"{session_id}.json"
+        # 校验格式 + 防路径穿越
+        if not _SESSION_ID_RE.match(session_id):
+            raise ValueError(f"Invalid session ID format: {session_id}")
+        resolved = (self.session_dir / f"{session_id}.json").resolve()
+        if not str(resolved).startswith(str(self.session_dir.resolve())):
+            raise ValueError("Path traversal detected")
+        return resolved
 
     def create_session(
         self,

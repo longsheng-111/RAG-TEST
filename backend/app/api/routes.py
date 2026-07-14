@@ -1,8 +1,11 @@
 """
 API 路由定义 - 文件上传、知识问答、知识库管理、文件管理
 """
+import logging
 import os
 import re
+
+logger = logging.getLogger(__name__)
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -150,7 +153,8 @@ async def upload_file(
             while chunk := await file.read(1024 * 1024):  # 1MB chunks
                 buffer.write(chunk)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"文件保存失败: {e}")
+        logger.exception("Failed to save uploaded file")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     # 处理入库
     try:
@@ -158,7 +162,8 @@ async def upload_file(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"文件处理失败: {e}")
+        logger.exception("Failed to process uploaded file")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
         "message": "上传并入库成功",
@@ -186,7 +191,8 @@ async def query(req: QueryRequest):
             history=req.history,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"问答处理失败: {e}")
+        logger.exception("QA query failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return result
 
@@ -223,7 +229,8 @@ async def create_session_api(req: CreateSessionRequest):
         )
         return _session_to_dict(session)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"创建会话失败: {e}")
+        logger.exception("Failed to create session")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/sessions")
@@ -233,7 +240,8 @@ async def list_sessions_api():
         sessions = session_manager.list_sessions()
         return {"sessions": [_session_to_dict(s) for s in sessions]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取会话列表失败: {e}")
+        logger.exception("Failed to list sessions")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/sessions/{session_id}")
@@ -392,7 +400,8 @@ async def chat(req: ChatRequest):
             system_prompt=system_prompt,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"问答处理失败: {e}")
+        logger.exception("Chat QA failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     # 8. 添加助手消息并保存
     token_cost = result.get("token_cost", {})
