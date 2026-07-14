@@ -147,13 +147,6 @@ def split_text(text: str, source_file: str = "") -> list[str]:
 
 def _split_by_paragraphs(text: str, source_file: str = "") -> list[str]:
     """按段落 / 标题切分文本"""
-    suffix = Path(source_file).suffix.lower() if source_file else ""
-
-    # Markdown 优先按标题切分
-    if suffix == ".md":
-        return _split_by_headers(text)
-
-    # 其他格式：先尝试用标题切，再用字符长度切
     header_chunks = _split_by_headers(text)
 
     final_chunks: list[str] = []
@@ -163,6 +156,15 @@ def _split_by_paragraphs(text: str, source_file: str = "") -> list[str]:
             continue
         if len(content) <= settings.max_chunk_size:
             final_chunks.append(content)
+            continue
+
+        # 超长标题块：把标题路径前缀保留在每个子块中，避免答案被切碎后丢失上下文
+        lines = content.split("\n", 1)
+        if len(lines) == 2 and lines[0].strip():
+            prefix, body = lines[0].strip(), lines[1].strip()
+            sub_chunks = _recursive_split(body)
+            for sub in sub_chunks:
+                final_chunks.append(f"{prefix}\n\n{sub}")
         else:
             final_chunks.extend(_recursive_split(content))
 

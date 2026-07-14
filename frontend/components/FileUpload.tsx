@@ -2,178 +2,145 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Card,
-  Upload,
-  Button,
-  Select,
-  message,
-  Typography,
-  Space,
-  Progress,
-  Alert,
-  Tag,
+  Card, Upload, Select, message, Typography, Space, Progress, Alert, Tag,
 } from 'antd';
-import { InboxOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import { InboxOutlined, CloudUploadOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import axios from 'axios';
 
 const { Dragger } = Upload;
 const { Title, Text } = Typography;
 
-interface Props {
-  collectionName: string;
-}
+interface Props { collectionName: string; }
 
-interface Collection {
-  name: string;
-  chunk_count: number;
-}
+interface Collection { name: string; chunk_count: number; }
 
 export default function FileUpload({ collectionName }: Props) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [targetCollection, setTargetCollection] = useState(collectionName);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
-    file_name: string;
-    chunks: number;
-    collection_name: string;
+    file_name: string; chunks: number; collection_name: string;
   } | null>(null);
 
   const fetchCollections = useCallback(async () => {
     try {
       const res = await axios.get('/api/collections');
       setCollections(res.data.collections || []);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => {
-    fetchCollections();
-  }, [fetchCollections]);
-
-  useEffect(() => {
-    setTargetCollection(collectionName);
-  }, [collectionName]);
+  useEffect(() => { fetchCollections(); }, [fetchCollections]);
+  useEffect(() => { setTargetCollection(collectionName); }, [collectionName]);
 
   const uploadProps: UploadProps = {
-    name: 'file',
-    multiple: false,
-    showUploadList: false,
+    name: 'file', multiple: false, showUploadList: false,
     accept: '.txt,.md,.csv,.json,.log,.pdf,.docx,.xlsx,.xlsm,.xltx,.xltm',
     beforeUpload: (file) => {
-      // 检查文件大小 (50MB 限制)
-      const maxSize = 50 * 1024 * 1024;
-      if (file.size > maxSize) {
-        message.error('文件大小不能超过 50MB');
-        return false;
-      }
+      if (file.size > 50 * 1024 * 1024) { message.error('File too large (max 50MB)'); return false; }
       return true;
     },
     customRequest: async ({ file, onSuccess, onError }) => {
-      setUploading(true);
-      setUploadResult(null);
-
+      setUploading(true); setUploadResult(null);
       const formData = new FormData();
       formData.append('file', file as File);
       formData.append('collection_name', targetCollection);
-
       try {
         const res = await axios.post('/api/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setUploadResult(res.data);
-        message.success(`上传成功！切分为 ${res.data.chunks} 个文本片段`);
+        message.success(`Uploaded! ${res.data.chunks} chunks`);
         onSuccess?.(res.data, undefined as any);
-        fetchCollections(); // 刷新知识库列表
+        fetchCollections();
       } catch (err: any) {
-        const detail = err.response?.data?.detail || '上传失败';
-        message.error(detail);
+        message.error(err.response?.data?.detail || 'Upload failed');
         onError?.(err as any);
-      } finally {
-        setUploading(false);
-      }
+      } finally { setUploading(false); }
     },
   };
 
   const collectionOptions = collections.map((c) => ({
-    value: c.name,
-    label: `${c.name} (${c.chunk_count} 片段)`,
+    value: c.name, label: `${c.name} (${c.chunk_count} chunks)`,
   }));
-
   if (!collectionOptions.find((o) => o.value === targetCollection)) {
-    collectionOptions.unshift({
-      value: targetCollection,
-      label: targetCollection,
-    });
+    collectionOptions.unshift({ value: targetCollection, label: targetCollection });
   }
 
-  return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Title level={3}>
-        <CloudUploadOutlined /> 上传文件
-      </Title>
+  const formatTypes = [
+    { type: 'Documents', tags: ['.pdf', '.docx', '.md', '.txt'], color: 'blue' },
+    { type: 'Data', tags: ['.xlsx', '.csv', '.json'], color: 'green' },
+  ];
 
-      <Card style={{ marginBottom: 24 }}>
+  return (
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CloudUploadOutlined style={{ fontSize: 22, color: 'var(--primary)' }} />
+          <h2 style={{ margin: 0 }}>Upload Files</h2>
+        </div>
+      </div>
+
+      <Card style={{ marginBottom: 20 }} className="modern-card">
         <div style={{ marginBottom: 16 }}>
-          <Text strong>目标知识库：</Text>
-          <Select
-            value={targetCollection}
-            onChange={setTargetCollection}
-            options={collectionOptions}
-            style={{ width: 300, marginLeft: 12 }}
-            placeholder="选择知识库"
-          />
+          <Text strong style={{ marginRight: 12 }}>Target Collection:</Text>
+          <Select value={targetCollection} onChange={setTargetCollection}
+            options={collectionOptions} style={{ width: 280 }} />
         </div>
 
-        <Dragger {...uploadProps} disabled={uploading} className="upload-dragger">
-          <p className="ant-upload-drag-icon">
-            <InboxOutlined />
-          </p>
-          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-          <p className="ant-upload-hint">
-            支持 PDF、Word、Excel、Markdown、TXT 等格式，单文件最大 50MB
-          </p>
-        </Dragger>
+        <div className="custom-dragger">
+          <Dragger {...uploadProps} disabled={uploading}>
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined style={{ color: 'var(--primary)' }} />
+            </p>
+            <p className="ant-upload-text" style={{ fontSize: 16, fontWeight: 600 }}>
+              Click or drag files here
+            </p>
+            <p className="ant-upload-hint" style={{ fontSize: 13 }}>
+              PDF · Word · Excel · Markdown · TXT — Max 50MB per file
+            </p>
+          </Dragger>
+        </div>
 
         {uploading && (
           <div style={{ marginTop: 16 }}>
-            <Progress percent={99} status="active" format={() => '处理中...'} />
+            <Progress percent={99} status="active"
+              format={() => 'Processing...'}
+              strokeColor={{ from: 'var(--primary)', to: 'var(--accent)' }} />
           </div>
         )}
       </Card>
 
       {uploadResult && (
         <Alert
-          type="success"
-          showIcon
-          message="上传成功"
+          type="success" showIcon icon={<FileTextOutlined />}
+          message="Upload Successful"
           description={
-            <div>
-              <p><strong>文件:</strong> {uploadResult.file_name}</p>
-              <p><strong>知识库:</strong> {uploadResult.collection_name}</p>
-              <p><strong>切分片段:</strong> {uploadResult.chunks} 个</p>
-            </div>
+            <Space direction="vertical" size={2}>
+              <Text><strong>File:</strong> {uploadResult.file_name}</Text>
+              <Text><strong>Collection:</strong> {uploadResult.collection_name}</Text>
+              <Text><strong>Chunks:</strong> {uploadResult.chunks}</Text>
+            </Space>
           }
+          style={{ marginBottom: 20, borderRadius: 'var(--radius)' }}
         />
       )}
 
-      <Card title="支持的文件格式" style={{ marginTop: 24 }}>
-        <Space wrap size="middle">
-          <Tag color="blue">.txt</Tag>
-          <Tag color="blue">.md</Tag>
-          <Tag color="blue">.csv</Tag>
-          <Tag color="blue">.json</Tag>
-          <Tag color="green">.pdf</Tag>
-          <Tag color="orange">.docx</Tag>
-          <Tag color="purple">.xlsx</Tag>
-          <Tag color="purple">.xlsm</Tag>
-        </Space>
-        <div style={{ marginTop: 12 }}>
-          <Text type="secondary">
-            PDF 文件支持文本型和图片型（自动调用 OCR），图片型需配置 DashScope API Key
-          </Text>
-        </div>
+      <Card title="Supported Formats" className="modern-card">
+        {formatTypes.map((group) => (
+          <div key={group.type} style={{ marginBottom: 12 }}>
+            <Text strong style={{ fontSize: 13 }}>{group.type}:</Text>
+            <br />
+            <Space wrap style={{ marginTop: 6 }}>
+              {group.tags.map((t) => (
+                <Tag key={t} color={group.color}>{t}</Tag>
+              ))}
+            </Space>
+          </div>
+        ))}
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          * Scanned PDFs require DashScope API key for OCR
+        </Text>
       </Card>
     </div>
   );

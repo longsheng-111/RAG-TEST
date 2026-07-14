@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     chroma_collection: str = "knowledge_chunks"
     chroma_persist_dir: str = _safe_data_dir("chroma_db")
 
+    # ---- 会话数据 ----
+    session_dir: str = _safe_data_dir("data/sessions")
+
     # ---- 嵌入模型 ----
     embed_model: str = "BAAI/bge-small-zh-v1.5"
 
@@ -45,6 +48,16 @@ class Settings(BaseSettings):
     # ---- 文本切分 ----
     max_chunk_size: int = 800
     chunk_overlap: int = 120
+
+    # ---- Token 预算 ----
+    max_input_tokens: int = 4000
+    max_output_tokens: int = 1024
+    max_total_tokens_per_session: int = 50000
+    context_compression_threshold: float = 0.6  # 超过 60% 触发上下文压缩
+
+    # ---- 检索过滤 ----
+    # BGE / 向量检索的余弦相似度阈值，低于此值认为检索结果不相关
+    retrieval_similarity_threshold: float = 0.65
 
     # ---- CORS ----
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]

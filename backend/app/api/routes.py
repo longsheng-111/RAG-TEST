@@ -11,6 +11,20 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.config import settings
+from app.core.persona import (
+    list_personas,
+    get_persona,
+    get_persona_default_kb,
+    get_persona_system_prompt,
+    validate_persona,
+)
+from app.core.session import session_manager
+from app.services.token_tracker import (
+    compress_session_context,
+    should_compress_context,
+    TokenCost,
+)
+from app.services.qa import qa_query
 from app.core.vector_store import (
     list_collections,
     create_collection,
@@ -21,6 +35,7 @@ from app.core.vector_store import (
 )
 from app.services.ingest import process_file
 from app.services.qa import qa_query
+from app.services.title_generator import generate_session_title
 
 router = APIRouter(prefix="/api")
 
@@ -59,6 +74,29 @@ class QueryRequest(BaseModel):
     top_k: int = 5
     collection_name: str = "knowledge_chunks"
     history: list[dict] = []
+
+
+class ChatRequest(BaseModel):
+    question: str
+    session_id: Optional[str] = None
+    persona: str = "default"
+    collection_name: Optional[str] = None
+    top_k: int = 5
+
+
+class CreateSessionRequest(BaseModel):
+    persona: str = "default"
+    collection_name: Optional[str] = None
+    title: str = "新会话"
+
+
+class SwitchPersonaRequest(BaseModel):
+    persona: str
+    clear_history: bool = False
+
+
+class UpdateTitleRequest(BaseModel):
+    title: str
 
 
 class CreateCollectionRequest(BaseModel):
@@ -136,7 +174,7 @@ async def upload_file(
 
 @router.post("/query")
 async def query(req: QueryRequest):
-    """知识库问答"""
+    """知识库问答（兼容旧接口）"""
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="问题不能为空")
 
@@ -151,6 +189,242 @@ async def query(req: QueryRequest):
         raise HTTPException(status_code=500, detail=f"问答处理失败: {e}")
 
     return result
+
+
+# ============================================================
+#  会话管理 + 新聊天接口
+# ============================================================
+
+def _session_to_dict(session) -> dict:
+    """将会话对象转为 API 返回字典"""
+    return {
+        "session_id": session.session_id,
+        "title": session.title,
+        "persona": session.persona,
+        "kb_id": session.kb_id,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at,
+        "total_tokens": session.total_tokens,
+        "message_count": len(session.messages),
+    }
+
+
+@router.post("/sessions")
+async def create_session_api(req: CreateSessionRequest):
+    """创建新会话"""
+    persona = validate_persona(req.persona)
+    kb_id = req.collection_name or get_persona_default_kb(persona)
+
+    try:
+        session = session_manager.create_session(
+            persona=persona,
+            kb_id=kb_id,
+            title=req.title,
+        )
+        return _session_to_dict(session)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"创建会话失败: {e}")
+
+
+@router.get("/sessions")
+async def list_sessions_api():
+    """列出所有会话"""
+    try:
+        sessions = session_manager.list_sessions()
+        return {"sessions": [_session_to_dict(s) for s in sessions]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取会话列表失败: {e}")
+
+
+@router.get("/sessions/{session_id}")
+async def get_session_api(session_id: str):
+    """获取会话详情"""
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return {
+        **_session_to_dict(session),
+        "messages": session.messages,
+        "compressed_history": session.compressed_history,
+    }
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session_api(session_id: str):
+    """删除会话"""
+    if session_manager.delete_session(session_id):
+        return {"session_id": session_id, "status": "deleted"}
+    raise HTTPException(status_code=404, detail="会话不存在")
+
+
+@router.put("/sessions/{session_id}/persona")
+async def switch_persona_api(session_id: str, req: SwitchPersonaRequest):
+    """切换会话角色"""
+    persona = validate_persona(req.persona)
+    session = session_manager.switch_persona(
+        session_id, persona, clear_history=req.clear_history
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return _session_to_dict(session)
+
+
+@router.put("/sessions/{session_id}/title")
+async def update_session_title_api(session_id: str, req: UpdateTitleRequest):
+    """更新会话标题"""
+    title = req.title.strip()
+    if not title or len(title) > 100:
+        raise HTTPException(status_code=400, detail="标题需 1-100 个字符")
+    session = session_manager.update_title(session_id, title)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return _session_to_dict(session)
+
+
+@router.get("/sessions/{session_id}/export")
+async def export_session_api(session_id: str):
+    """导出会话历史为 Markdown"""
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    lines = [f"# {session.title or '未命名会话'}"]
+    lines.append("")
+    lines.append(f"- **会话 ID**: {session.session_id}")
+    lines.append(f"- **角色**: {session.persona}")
+    lines.append(f"- **知识库**: {session.kb_id}")
+    lines.append(f"- **创建时间**: {session.created_at}")
+    lines.append(f"- **累计 Token**: {session.total_tokens}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## 对话历史")
+    lines.append("")
+
+    for msg in session.messages:
+        role_label = "用户" if msg["role"] == "user" else "助手"
+        lines.append(f"### {role_label}")
+        lines.append("")
+        lines.append(msg.get("content", ""))
+        lines.append("")
+        if msg.get("token_cost"):
+            cost = msg["token_cost"]
+            lines.append(
+                f"_Tokens: {cost.get('total_tokens', 0)}_"
+            )
+            lines.append("")
+
+    markdown = "\n".join(lines)
+
+    from fastapi.responses import PlainTextResponse
+    # 文件名只使用 session_id，避免中文标题导致 HTTP header 编码错误
+    filename = f"session_{session_id}.md"
+    return PlainTextResponse(
+        markdown,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/personas")
+async def list_personas_api():
+    """获取角色列表"""
+    return {"personas": list_personas()}
+
+
+@router.post("/chat")
+async def chat(req: ChatRequest):
+    """基于会话的聊天接口"""
+    if not req.question.strip():
+        raise HTTPException(status_code=400, detail="问题不能为空")
+
+    # 1. 获取或创建会话
+    session = None
+    if req.session_id:
+        session = session_manager.get_session(req.session_id)
+
+    if session is None:
+        persona = validate_persona(req.persona)
+        kb_id = req.collection_name or get_persona_default_kb(persona)
+        session = session_manager.create_session(
+            persona=persona,
+            kb_id=kb_id,
+        )
+
+    # 2. 更新 persona / kb_id（如果请求中显式指定）
+    if req.persona:
+        session.persona = validate_persona(req.persona)
+    if req.collection_name:
+        session.kb_id = req.collection_name
+
+    # 3. 添加上次问答的 Token 到累计
+    # （用户消息的 token 在上一轮已经统计进 assistant 的 prompt 中）
+
+    # 4. 上下文压缩：超过预算 60% 时触发
+    if should_compress_context(session.total_tokens):
+        from openai import OpenAI
+        client = None
+        if settings.deepseek_api_key:
+            client = OpenAI(
+                api_key=settings.deepseek_api_key,
+                base_url=settings.deepseek_base_url,
+            )
+        compress_cost = compress_session_context(session, client)
+        session.update_total_tokens(compress_cost.total)
+
+    # 5. 添加用户消息
+    session.add_message("user", req.question.strip())
+
+    # 6. 构建对话历史（取最近 6 轮 / 12 条）
+    history = [
+        {"role": m["role"], "content": m["content"]}
+        for m in session.messages[:-1][-12:]
+    ]
+
+    # 7. 调用 QA
+    system_prompt = get_persona_system_prompt(session.persona)
+    try:
+        result = qa_query(
+            question=req.question,
+            collection_name=session.kb_id,
+            top_k=req.top_k,
+            history=history,
+            system_prompt=system_prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"问答处理失败: {e}")
+
+    # 8. 添加助手消息并保存
+    token_cost = result.get("token_cost", {})
+    session.add_message("assistant", result["answer"], token_cost=token_cost)
+    session_manager.save_session(session)
+
+    # 9. 生成标题（首次用户提问后）
+    if len(session.messages) == 2 and session.title == "新会话":
+        new_title, title_cost = generate_session_title(req.question.strip())
+        if new_title:
+            session.title = new_title
+            session.update_total_tokens(title_cost.total)
+            session_manager.save_session(session)
+
+    # 10. 返回真实 token_cost
+    response_cost = TokenCost(
+        prompt_tokens=token_cost.get("prompt_tokens", 0),
+        completion_tokens=token_cost.get("completion_tokens", 0),
+        total_tokens=token_cost.get("total_tokens", 0),
+        session_total=session.total_tokens,
+    )
+
+    return {
+        "session_id": session.session_id,
+        "title": session.title,
+        "persona": session.persona,
+        "kb_id": session.kb_id,
+        "answer": result["answer"],
+        "sources": result["sources"],
+        "token_cost": dict(response_cost),
+        "query": req.question,
+    }
 
 
 # ============================================================
