@@ -39,6 +39,16 @@ from app.core.vector_store import (
 from app.services.ingest import process_file
 from app.services.qa import qa_query
 from app.services.title_generator import generate_session_title
+from app.services.examiner import (
+    generate_question,
+    evaluate_answer,
+    generate_summary,
+    detect_cheating,
+    get_cached_evaluation,
+    set_cached_evaluation,
+    MAX_QUESTIONS,
+    MAX_FOLLOW_UP,
+)
 
 router = APIRouter(prefix="/api")
 
@@ -91,6 +101,9 @@ class CreateSessionRequest(BaseModel):
     persona: str = "default"
     collection_name: Optional[str] = None
     title: str = "新会话"
+    mode: str = "qa"  # qa | examiner
+    target_position: Optional[str] = None
+    topic: Optional[str] = None
 
 
 class SwitchPersonaRequest(BaseModel):
@@ -108,6 +121,19 @@ class CreateCollectionRequest(BaseModel):
 
 class RenameCollectionRequest(BaseModel):
     new_name: str
+
+
+class ExamStartRequest(BaseModel):
+    session_id: str
+    target_position: Optional[str] = None
+    topic: Optional[str] = None
+    collection_name: Optional[str] = None
+    top_k: int = 5
+
+
+class ExamNextRequest(BaseModel):
+    answer: str
+    top_k: int = 5
 
 
 # ============================================================
@@ -194,7 +220,11 @@ async def query(req: QueryRequest):
         logger.exception("QA query failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    return result
+    return {
+        **result,
+        "reasoning_steps": result.get("reasoning_steps", []),
+        "queries": result.get("queries", [req.question]),
+    }
 
 
 # ============================================================
@@ -208,6 +238,8 @@ def _session_to_dict(session) -> dict:
         "title": session.title,
         "persona": session.persona,
         "kb_id": session.kb_id,
+        "mode": session.mode,
+        "exam_state": session.exam_state,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
         "total_tokens": session.total_tokens,
@@ -222,10 +254,31 @@ async def create_session_api(req: CreateSessionRequest):
     kb_id = req.collection_name or get_persona_default_kb(persona)
 
     try:
+        exam_state = None
+        if req.mode == "examiner":
+            exam_state = {
+                "mode": "examiner",
+                "target_position": req.target_position or "未指定岗位",
+                "topic": req.topic or "未指定方向",
+                "collection_name": kb_id,
+                "status": "configuring",
+                "question_index": 0,
+                "current_question": None,
+                "current_expectations": [],
+                "current_thread": [],
+                "follow_up_count": 0,
+                "max_follow_up": 2,
+                "scores": [],
+                "weak_points": [],
+                "summary": None,
+                "answer_cache": {},
+            }
         session = session_manager.create_session(
             persona=persona,
             kb_id=kb_id,
             title=req.title,
+            mode=req.mode,
+            exam_state=exam_state,
         )
         return _session_to_dict(session)
     except Exception as e:
@@ -403,9 +456,15 @@ async def chat(req: ChatRequest):
         logger.exception("Chat QA failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    # 8. 添加助手消息并保存
+    # 8. 添加助手消息并保存（同时保存来源和推理路径，便于页面刷新后恢复）
     token_cost = result.get("token_cost", {})
-    session.add_message("assistant", result["answer"], token_cost=token_cost)
+    session.add_message(
+        "assistant",
+        result["answer"],
+        token_cost=token_cost,
+        sources=result.get("sources"),
+        reasoning_steps=result.get("reasoning_steps"),
+    )
     session_manager.save_session(session)
 
     # 9. 生成标题（首次用户提问后）
@@ -433,6 +492,297 @@ async def chat(req: ChatRequest):
         "sources": result["sources"],
         "token_cost": dict(response_cost),
         "query": req.question,
+        "reasoning_steps": result.get("reasoning_steps", []),
+        "queries": result.get("queries", [req.question]),
+    }
+
+
+# ============================================================
+#  考官模式（模拟面试）
+# ============================================================
+
+@router.post("/exam/start")
+async def exam_start(req: ExamStartRequest):
+    """开启一场考官模式面试，配置从会话中读取"""
+    session = session_manager.get_session(req.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    if session.mode != "examiner":
+        raise HTTPException(status_code=400, detail="该会话不是模拟面试模式")
+
+    # 优先使用会话创建时指定的配置，请求中可覆盖
+    state = session.exam_state or {}
+    target_position = (req.target_position or state.get("target_position") or "").strip()
+    topic = (req.topic or state.get("topic") or "").strip()
+    collection_name = req.collection_name or state.get("collection_name") or session.kb_id
+
+    if not target_position or not topic:
+        raise HTTPException(status_code=400, detail="请先填写目标岗位和面试方向")
+
+    # 检索参考资料
+    from app.services.retrieval import AdvancedRetriever
+    retriever = AdvancedRetriever(collection_name)
+    chunks = retriever.hybrid_search(topic, top_k=req.top_k)
+
+    if not chunks:
+        raise HTTPException(status_code=400, detail="当前知识库没有相关资料，请补充后重试")
+
+    # 生成第一题
+    try:
+        question, expectations, reference_points, cost = generate_question(
+            target_position=target_position,
+            topic=topic,
+            context_chunks=chunks,
+            thread=[],
+            question_index=1,
+            follow_up_count=0,
+        )
+    except Exception as e:
+        logger.exception("Failed to generate first exam question")
+        raise HTTPException(status_code=500, detail=f"生成题目失败: {str(e)}")
+
+    if not question:
+        raise HTTPException(status_code=500, detail="模型未返回有效题目")
+
+    session.exam_state = {
+        "mode": "examiner",
+        "target_position": target_position,
+        "topic": topic,
+        "collection_name": collection_name,
+        "status": "asking",
+        "question_index": 1,
+        "current_question": question,
+        "current_expectations": expectations,
+        "reference_points": reference_points,
+        "current_thread": [{"role": "assistant", "content": question}],
+        "follow_up_count": 0,
+        "max_follow_up": MAX_FOLLOW_UP,
+        "scores": [],
+        "weak_points": [],
+        "summary": None,
+        "answer_cache": {},
+    }
+    session.add_message("assistant", question, token_cost=dict(cost))
+    session.update_total_tokens(cost.total)
+    session_manager.save_session(session)
+
+    return {
+        "session_id": session.session_id,
+        "status": "asking",
+        "question_index": 1,
+        "current_question": question,
+        "current_expectations": expectations,
+        "follow_up_count": 0,
+        "scores": [],
+        "token_cost": dict(cost),
+    }
+
+
+@router.post("/exam/{session_id}/next")
+async def exam_next(session_id: str, req: ExamNextRequest):
+    """提交答案并进入追问、下一题或总结"""
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    state = session.exam_state or {}
+    if state.get("status") == "finished":
+        raise HTTPException(status_code=400, detail="面试已结束")
+    if not state.get("current_question"):
+        raise HTTPException(status_code=400, detail="当前没有待回答的题目")
+
+    answer = req.answer.strip()
+    if not answer:
+        raise HTTPException(status_code=400, detail="回答不能为空")
+
+    # 检索参考资料
+    from app.services.retrieval import AdvancedRetriever
+    retriever = AdvancedRetriever(state["collection_name"])
+    chunks = retriever.hybrid_search(state["topic"], top_k=req.top_k)
+
+    # 反作弊检测（基于同一题历史答案 + 参考资料原文）
+    previous_answers = [
+        m["content"] for m in state.get("current_thread", [])
+        if m["role"] == "user"
+    ]
+    is_cheating, cheat_reason = detect_cheating(answer, previous_answers, chunks)
+    if is_cheating:
+        return {
+            "session_id": session_id,
+            "status": state["status"],
+            "question_index": state["question_index"],
+            "current_question": state["current_question"],
+            "current_expectations": state["current_expectations"],
+            "reference_points": state.get("reference_points", []),
+            "follow_up_count": state["follow_up_count"],
+            "evaluation": {
+                "raw": f"【评分】0\n【点评】{cheat_reason}\n【补充】请独立作答，不要直接复制资料。\n【纠正】无",
+                "score": 0,
+                "points": [
+                    {"point": p, "hit": False, "evidence": "反作弊判定未作答"}
+                    for p in state.get("reference_points", [])
+                ],
+            },
+            "summary": None,
+            "scores": state.get("scores", []),
+            "weak_points": state.get("weak_points", []),
+            "cheating_detected": True,
+            "token_cost": dict(TokenCost()),
+        }
+
+    # 答案缓存命中则直接返回
+    cached = get_cached_evaluation(state, state["current_question"], answer)
+    eval_result = cached
+    eval_cost = TokenCost()
+    if not eval_result:
+        eval_result, eval_cost = evaluate_answer(
+            target_position=state["target_position"],
+            topic=state["topic"],
+            question=state["current_question"],
+            answer=answer,
+            reference_points=state.get("reference_points", []),
+            context_chunks=chunks,
+            thread=state.get("current_thread", []),
+            follow_up_count=state["follow_up_count"],
+        )
+        set_cached_evaluation(state, state["current_question"], answer, eval_result)
+
+    # 记录当前线程
+    state["current_thread"].append({"role": "user", "content": answer})
+    state["current_thread"].append({"role": "assistant", "content": eval_result["raw"]})
+    session.add_message("user", answer)
+    session.add_message("assistant", eval_result["raw"], token_cost=dict(eval_cost))
+
+    # 记录得分与要点命中情况
+    missed_points = [p["point"] for p in eval_result.get("points", []) if not p.get("hit")]
+    state["scores"].append({
+        "question": state["current_question"],
+        "answer": answer,
+        "score": eval_result["score"],
+        "feedback": eval_result["raw"],
+        "points": eval_result.get("points", []),
+        "missed_points": missed_points,
+    })
+    # 累计薄弱环节
+    state["weak_points"] = (state.get("weak_points", []) + missed_points)[-20:]
+
+    total_cost = TokenCost(
+        prompt_tokens=eval_cost.prompt,
+        completion_tokens=eval_cost.completion,
+        total_tokens=eval_cost.total,
+    )
+
+    # 判断是否结束
+    should_finish = (
+        answer == "结束"
+        or state["question_index"] >= MAX_QUESTIONS
+    )
+
+    response_evaluation = eval_result if state["status"] != "finished" else None
+    response_summary = None
+
+    if should_finish:
+        summary, summary_cost = generate_summary(
+            target_position=state["target_position"],
+            topic=state["topic"],
+            scores=state["scores"],
+            weak_points=state.get("weak_points", []),
+        )
+        total_cost = TokenCost(
+            prompt_tokens=total_cost.prompt + summary_cost.prompt,
+            completion_tokens=total_cost.completion + summary_cost.completion,
+            total_tokens=total_cost.total + summary_cost.total,
+        )
+        state["status"] = "finished"
+        state["summary"] = summary
+        session.add_message("assistant", summary["raw"], token_cost=dict(summary_cost))
+        response_summary = summary
+        response_evaluation = None
+    elif eval_result["score"] < 7 and state["follow_up_count"] < state["max_follow_up"]:
+        # 追问
+        state["status"] = "follow_up"
+        state["follow_up_count"] += 1
+        question, expectations, reference_points, q_cost = generate_question(
+            target_position=state["target_position"],
+            topic=state["topic"],
+            context_chunks=chunks,
+            thread=state["current_thread"],
+            question_index=state["question_index"],
+            follow_up_count=state["follow_up_count"],
+        )
+        total_cost = TokenCost(
+            prompt_tokens=total_cost.prompt + q_cost.prompt,
+            completion_tokens=total_cost.completion + q_cost.completion,
+            total_tokens=total_cost.total + q_cost.total,
+        )
+        state["current_question"] = question
+        state["current_expectations"] = expectations
+        state["reference_points"] = reference_points
+        state["current_thread"].append({"role": "assistant", "content": question})
+        session.add_message("assistant", question, token_cost=dict(q_cost))
+    else:
+        # 下一题
+        state["status"] = "asking"
+        state["question_index"] += 1
+        state["follow_up_count"] = 0
+        state["current_thread"] = []
+        question, expectations, reference_points, q_cost = generate_question(
+            target_position=state["target_position"],
+            topic=state["topic"],
+            context_chunks=chunks,
+            thread=[],
+            question_index=state["question_index"],
+            follow_up_count=0,
+        )
+        total_cost = TokenCost(
+            prompt_tokens=total_cost.prompt + q_cost.prompt,
+            completion_tokens=total_cost.completion + q_cost.completion,
+            total_tokens=total_cost.total + q_cost.total,
+        )
+        state["current_question"] = question
+        state["current_expectations"] = expectations
+        state["reference_points"] = reference_points
+        state["current_thread"] = [{"role": "assistant", "content": question}]
+        session.add_message("assistant", question, token_cost=dict(q_cost))
+
+    session.exam_state = state
+    session.update_total_tokens(total_cost.total)
+    session_manager.save_session(session)
+
+    return {
+        "session_id": session_id,
+        "status": state["status"],
+        "question_index": state["question_index"],
+        "current_question": state["current_question"],
+        "current_expectations": state["current_expectations"],
+        "reference_points": state.get("reference_points", []),
+        "follow_up_count": state["follow_up_count"],
+        "evaluation": response_evaluation,
+        "summary": response_summary,
+        "scores": state["scores"],
+        "weak_points": state.get("weak_points", []),
+        "token_cost": dict(total_cost),
+    }
+
+
+@router.get("/exam/{session_id}")
+async def exam_get(session_id: str):
+    """获取面试状态"""
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    state = session.exam_state or {}
+    return {
+        "session_id": session_id,
+        "status": state.get("status", "asking"),
+        "question_index": state.get("question_index", 1),
+        "current_question": state.get("current_question"),
+        "current_expectations": state.get("current_expectations", []),
+        "reference_points": state.get("reference_points", []),
+        "follow_up_count": state.get("follow_up_count", 0),
+        "scores": state.get("scores", []),
+        "summary": state.get("summary"),
+        "weak_points": state.get("weak_points", []),
     }
 
 

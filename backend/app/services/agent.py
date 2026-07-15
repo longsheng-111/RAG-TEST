@@ -145,6 +145,7 @@ def agent_query(
 
     queries = [question]
     all_results: list[tuple[str, str, float]] = []
+    step_results: list[list[tuple[str, str, float]]] = []
     iterations = 0
     rewritten_query = None
     prev_results: list[tuple[str, str, float]] = []
@@ -155,6 +156,7 @@ def agent_query(
 
         # Action: knowledge_search
         search_results = retrieve_func(current_query)
+        step_results.append(search_results)
 
         # Observation: 合并到总结果
         all_results.extend(search_results)
@@ -208,12 +210,41 @@ def agent_query(
 
     sources = [
         {
-            "content": content[:300],
+            "id": f"src_{idx + 1}",
+            "content": content,
             "similarity": round(score, 4),
             "file_name": file_name,
         }
-        for file_name, content, score in unique_results
+        for idx, (file_name, content, score) in enumerate(unique_results)
     ]
+
+    max_source_score = unique_results[0][2] if unique_results else 0.0
+    overall_confidence = (
+        "high" if max_source_score >= SUFFICIENCY_THRESHOLD + 0.1
+        else "medium" if max_source_score >= SUFFICIENCY_THRESHOLD
+        else "low"
+    )
+
+    reasoning_steps = []
+    for step_idx, q in enumerate(queries):
+        hits = step_results[step_idx] if step_idx < len(step_results) else []
+        reasoning_steps.append({
+            "step": step_idx + 1,
+            "action": "knowledge_search",
+            "query": q,
+            "hits": len(hits),
+            "top_score": round(max((s for _, _, s in hits), default=0.0), 4),
+            "confidence": overall_confidence,
+        })
+    if rewritten_query:
+        reasoning_steps.append({
+            "step": len(queries) + 1,
+            "action": "query_rewrite",
+            "query": rewritten_query,
+            "hits": 0,
+            "top_score": 0.0,
+            "confidence": "medium",
+        })
 
     return {
         "answer": answer,
@@ -221,4 +252,6 @@ def agent_query(
         "token_cost": total_cost,
         "iterations": iterations,
         "rewritten_query": rewritten_query,
+        "reasoning_steps": reasoning_steps,
+        "queries": queries,
     }

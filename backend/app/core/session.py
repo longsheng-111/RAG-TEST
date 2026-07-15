@@ -26,21 +26,25 @@ class Session:
         title: str = "新会话",
         persona: str = "default",
         kb_id: str = "",
+        mode: str = "qa",
         messages: Optional[list[dict]] = None,
         created_at: Optional[str] = None,
         updated_at: Optional[str] = None,
         total_tokens: int = 0,
         compressed_history: Optional[list[dict]] = None,
+        exam_state: Optional[dict] = None,
     ):
         self.session_id = session_id
         self.title = title
         self.persona = persona
         self.kb_id = kb_id or settings.chroma_collection
+        self.mode = mode
         self.messages = messages or []
         self.created_at = created_at or datetime.now().isoformat()
         self.updated_at = updated_at or datetime.now().isoformat()
         self.total_tokens = total_tokens
         self.compressed_history = compressed_history or []
+        self.exam_state = exam_state or {}
 
     def to_dict(self) -> dict:
         return {
@@ -48,11 +52,13 @@ class Session:
             "title": self.title,
             "persona": self.persona,
             "kb_id": self.kb_id,
+            "mode": self.mode,
             "messages": self.messages,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "total_tokens": self.total_tokens,
             "compressed_history": self.compressed_history,
+            "exam_state": self.exam_state,
         }
 
     @classmethod
@@ -64,8 +70,10 @@ class Session:
         role: str,
         content: str,
         token_cost: Optional[dict] = None,
+        sources: Optional[list[dict]] = None,
+        reasoning_steps: Optional[list[dict]] = None,
     ) -> None:
-        """添加一条消息并更新时间戳"""
+        """添加一条消息并更新时间戳，可选保存来源和推理路径"""
         msg = {
             "role": role,
             "content": content,
@@ -73,6 +81,10 @@ class Session:
         }
         if token_cost:
             msg["token_cost"] = token_cost
+        if sources:
+            msg["sources"] = sources
+        if reasoning_steps:
+            msg["reasoning_steps"] = reasoning_steps
         self.messages.append(msg)
         self.updated_at = datetime.now().isoformat()
 
@@ -114,14 +126,18 @@ class SessionManager:
         persona: str = "default",
         kb_id: Optional[str] = None,
         title: str = "新会话",
+        mode: str = "qa",
+        exam_state: Optional[dict] = None,
     ) -> Session:
-        """创建新会话"""
+        """创建新会话，支持直接指定考官模式配置"""
         session_id = f"sess_{uuid.uuid4().hex[:16]}"
         session = Session(
             session_id=session_id,
             title=title,
             persona=persona,
             kb_id=kb_id or settings.chroma_collection,
+            mode=mode,
+            exam_state=exam_state or {},
         )
         self.save_session(session)
         return session
