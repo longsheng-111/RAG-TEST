@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Card, Table, Button, Popconfirm, message, Typography,
-  Select, Space, Drawer, Tag,
+  Table, Button, Popconfirm, message, Typography,
+  Select, Space, Drawer,
 } from 'antd';
 import {
   DeleteOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface FileItem {
   file_name: string;
@@ -83,54 +83,23 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
       title: '文件名', dataIndex: 'file_name', key: 'file_name',
       render: (name: string) => (
         <Space size={10}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, #f0f4ff, #e0f2fe)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <FileTextOutlined style={{ color: 'var(--primary)', fontSize: 15 }} />
-          </div>
-          <Text strong style={{ color: 'var(--text-primary)' }}>{name}</Text>
+          <FileTextOutlined style={{ fontSize: 18, color: 'var(--ink-secondary, #6B645A)', flexShrink: 0 }} />
+          <Text strong style={{ color: 'var(--ink, #1C1A17)' }}>{name}</Text>
         </Space>
       ),
     },
     {
       title: '切片数', dataIndex: 'chunk_count', key: 'chunk_count', width: 120,
       render: (count: number) => (
-        <Tag
-          style={{
-            background: 'linear-gradient(135deg, var(--mint-100), var(--mint-50))',
-            color: 'var(--mint-700)',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            fontWeight: 500,
-          }}
-        >
+        <span className="op-tag-sunken" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {count.toLocaleString()} chunks
-        </Tag>
+        </span>
       ),
     },
     {
       title: '所属知识库', dataIndex: 'collection_name', key: 'collection_name', width: 180,
       render: (name: string) => (
-        <Tag
-          style={{
-            background: 'var(--bg-page)',
-            color: 'var(--text-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            fontWeight: 500,
-          }}
-        >
-          {name}
-        </Tag>
+        <span className="op-tag">{name}</span>
       ),
     },
     {
@@ -138,8 +107,9 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
       render: (_: any, record: FileItem) => (
         <Space size={4}>
           <Button
-            type="link"
+            type="text"
             icon={<EyeOutlined />}
+            className="op-link"
             onClick={() => handlePreview(record.file_name)}
           >
             预览
@@ -152,10 +122,9 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
             cancelText="取消"
           >
             <Button
-              type="link"
-              danger
+              type="text"
               icon={<DeleteOutlined />}
-              style={{ borderRadius: 'var(--radius-sm)', transition: 'all 0.2s ease' }}
+              className="op-link-danger"
             >
               删除
             </Button>
@@ -166,11 +135,11 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
   ];
 
   return (
-    <div>
+    <div className="fm-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <FileTextOutlined style={{ fontSize: 22, color: 'var(--primary)' }} />
-          <h2 style={{ margin: 0 }}>文件管理</h2>
+          <FileTextOutlined style={{ fontSize: 22, color: 'var(--brand, #DE5126)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink, #1C1A17)' }}>文件管理</h2>
         </div>
         <Space size={12}>
           <Select
@@ -178,52 +147,24 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
             onChange={onCollectionChange}
             options={collectionOptions}
             style={{ width: 220 }}
-            dropdownStyle={{ borderRadius: 'var(--radius-sm)' }}
+            className="op-select"
           />
           <Button
             icon={<ReloadOutlined />}
             onClick={fetchFiles}
-            style={{
-              borderRadius: 'var(--radius-sm)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary-light)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '';
-              (e.currentTarget as HTMLButtonElement).style.color = '';
-            }}
+            className="op-btn"
           >
             刷新
           </Button>
         </Space>
       </div>
 
-      <Card className="modern-card" bodyStyle={{ padding: 0 }}>
+      <div className="op-card" style={{ overflow: 'hidden' }}>
         {files.length === 0 && !loading ? (
-          <div style={{ padding: '56px 24px', textAlign: 'center' }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                margin: '0 auto 18px',
-                borderRadius: 'var(--radius-lg)',
-                background: 'linear-gradient(135deg, #f0f4ff, #e0f2fe)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <FileTextOutlined style={{ fontSize: 28, color: 'var(--primary)' }} />
-            </div>
-            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
-              该知识库暂无文件
-            </h3>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
-              上传文件后将在此列出。
-            </p>
+          <div className="op-empty">
+            <FileTextOutlined style={{ fontSize: 32, color: 'var(--brand, #DE5126)' }} />
+            <h3>该知识库暂无文件</h3>
+            <p>上传文件后将在此列出。</p>
           </div>
         ) : (
           <Table
@@ -232,55 +173,176 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
             rowKey="file_name"
             loading={loading}
             pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 个文件` }}
-            style={{ overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}
+            className="op-table"
           />
         )}
-      </Card>
+      </div>
 
       <Drawer
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FileTextOutlined style={{ color: 'var(--primary)' }} />
-            <span style={{ fontWeight: 700 }}>预览：{preview.name}</span>
+            <FileTextOutlined style={{ color: 'var(--brand, #DE5126)' }} />
+            <span style={{ fontWeight: 600, color: 'var(--ink, #1C1A17)' }}>预览：{preview.name}</span>
           </div>
         }
         open={preview.open}
         onClose={() => setPreview((p) => ({ ...p, open: false }))}
         width={700}
-        bodyStyle={{ padding: 20, background: 'var(--bg-page)' }}
-        headerStyle={{ borderBottom: '1px solid var(--border)' }}
+        styles={{
+          body: { padding: 20, background: 'var(--bg-paper, #FFF6EC)' },
+          header: { borderBottom: '1px solid rgba(28,26,23,0.15)' },
+        }}
       >
         {preview.truncated && (
-          <Tag
-            color="orange"
-            style={{
-              marginBottom: 14,
-              borderRadius: 'var(--radius-sm)',
-              padding: '4px 10px',
-              fontWeight: 500,
-            }}
-          >
+          <div className="op-tag-warn" style={{ marginBottom: 14 }}>
             已截断 — 仅显示前 5,000 个字符（共 {preview.total.toLocaleString()} 个）
-          </Tag>
+          </div>
         )}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            padding: 20,
-            borderRadius: 'var(--radius-lg)',
-            maxHeight: 'calc(100vh - 200px)',
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-            fontFamily: "'JetBrains Mono', 'Consolas', monospace",
-            fontSize: 13,
-            lineHeight: 1.7,
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--border)',
-          }}
-        >
+        <div className="op-code-block">
           {preview.content}
         </div>
       </Drawer>
+
+      <style jsx>{`
+        .fm-root {
+          color: var(--ink, #1C1A17);
+        }
+        .op-card {
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-btn {
+          border-radius: 3px;
+          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--bg-panel, #FFFDF8);
+          color: var(--ink, #1C1A17);
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-btn:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          border-color: var(--brand, #DE5126);
+          color: var(--brand, #DE5126);
+        }
+        .op-btn:active {
+          transform: translate(0, 0);
+          box-shadow: none;
+        }
+        .op-link {
+          color: var(--ink-secondary, #6B645A);
+          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-link:hover {
+          color: var(--brand, #DE5126);
+        }
+        .op-link-danger {
+          color: var(--brand, #DE5126);
+          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-link-danger:hover {
+          color: var(--brand-hover, #C4431B);
+        }
+        .op-tag {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--bg-panel, #FFFDF8);
+          color: var(--ink-secondary, #6B645A);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-tag-sunken {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--bg-sunken, #F5EDDF);
+          color: var(--ink, #1C1A17);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-tag-warn {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--brand-soft, #FBE9E0);
+          color: var(--brand, #DE5126);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-empty {
+          text-align: center;
+          padding: 56px 24px;
+        }
+        .op-empty h3 {
+          margin: 16px 0 6px;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--ink, #1C1A17);
+        }
+        .op-empty p {
+          margin: 0;
+          color: var(--ink-secondary, #6B645A);
+          font-size: 14px;
+        }
+        .op-code-block {
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          padding: 16px;
+          max-height: calc(100vh - 200px);
+          overflow: auto;
+          white-space: pre-wrap;
+          font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+          font-size: 13px;
+          line-height: 1.7;
+        }
+        .op-select :global(.ant-select-selector) {
+          border: 1.5px solid var(--ink, #1C1A17) !important;
+          border-radius: 3px !important;
+          background: var(--bg-panel, #FFFDF8) !important;
+        }
+        .op-select :global(.ant-select-focused .ant-select-selector) {
+          border-color: var(--brand, #DE5126) !important;
+          outline: 2px solid var(--brand, #DE5126) !important;
+          outline-offset: 2px !important;
+        }
+        .op-table :global(.ant-table) {
+          border-radius: 3px !important;
+        }
+        .op-table :global(.ant-table-thead > tr > th) {
+          background: var(--bg-sunken, #F5EDDF) !important;
+          color: var(--ink, #1C1A17) !important;
+          font-weight: 600 !important;
+          border-bottom: 1px solid rgba(28, 26, 23, 0.15) !important;
+        }
+        .op-table :global(.ant-table-tbody > tr > td) {
+          border-bottom: 1px solid rgba(28, 26, 23, 0.15) !important;
+        }
+        .op-table :global(.ant-table-tbody > tr:hover > td) {
+          background: var(--bg-sunken, #F5EDDF) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .op-card, .op-btn, .op-link, .op-link-danger {
+            transition: opacity 100ms ease;
+          }
+        }
+      `}</style>
     </div>
   );
 }

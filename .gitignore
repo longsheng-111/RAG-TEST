@@ -5,6 +5,8 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+backend/venv/
+backend/venv_new/
 
 # Build outputs
 .next/
@@ -27,9 +29,13 @@ dist/
 Thumbs.db
 
 # Project specific
-backend/chroma_db/
+backend/vector_db/
+backend/backend/
 backend/models/
 backend/uploads/
+backend/app/vector_db/
+backend/app/uploads/
+backend/app/data/
 
 # Python
 *.log

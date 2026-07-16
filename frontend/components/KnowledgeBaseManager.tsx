@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Card, List, Button, Modal, Input, message, Popconfirm, Typography, Space, Tag,
+  List, Button, Modal, Input, message, Popconfirm, Typography, Space,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, EditOutlined, DatabaseOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Collection { name: string; chunk_count: number; }
 
@@ -67,52 +67,29 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
   };
 
   return (
-    <div>
+    <div className="kb-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--primary)' }} />
-          <h2 style={{ margin: 0 }}>知识库管理</h2>
+          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--brand, #DE5126)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink, #1C1A17)' }}>知识库管理</h2>
         </div>
-        <Button type="primary" icon={<PlusOutlined />}
-          onClick={() => { setNameInput(''); setModalOpen('create'); }}>
+        <Button
+          className="op-btn op-btn-primary"
+          icon={<PlusOutlined />}
+          onClick={() => { setNameInput(''); setModalOpen('create'); }}
+        >
           新建知识库
         </Button>
       </div>
 
       {collections.length === 0 && !loading ? (
-        <div
-          className="modern-card"
-          style={{
-            textAlign: 'center',
-            padding: '56px 24px',
-            background: 'linear-gradient(180deg, #fff 0%, #f8fafc 100%)',
-          }}
-        >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              margin: '0 auto 20px',
-              borderRadius: 'var(--radius-lg)',
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-glow)',
-            }}
-          >
-            <DatabaseOutlined style={{ fontSize: 32, color: '#fff' }} />
-          </div>
-          <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-            暂无知识库
-          </h3>
-          <p style={{ margin: '0 0 24px', color: 'var(--text-secondary)', fontSize: 14 }}>
-            创建第一个知识库，开始上传文档并问答。
-          </p>
+        <div className="op-empty">
+          <DatabaseOutlined style={{ fontSize: 32, color: 'var(--brand, #DE5126)' }} />
+          <h3>暂无知识库</h3>
+          <p>创建第一个知识库，开始上传文档并问答。</p>
           <Button
-            type="primary"
+            className="op-btn op-btn-primary"
             icon={<PlusOutlined />}
-            size="large"
             onClick={() => { setNameInput(''); setModalOpen('create'); }}
           >
             新建知识库
@@ -125,84 +102,55 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
           dataSource={collections}
           renderItem={(item) => (
             <List.Item style={{ marginBottom: 0 }}>
-              <Card
-                hoverable
-                className={selectedCollection === item.name ? 'modern-card modern-card-active' : 'modern-card'}
-                bodyStyle={{ padding: 18 }}
+              <div
+                className={`op-card op-kb-item ${selectedCollection === item.name ? 'op-kb-item-active' : ''}`}
                 onClick={() => onSelectCollection(item.name)}
-                style={{
-                  overflow: 'hidden',
-                  transition: 'all 0.25s ease',
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectCollection(item.name);
+                  }
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
-                    <div
+                    <DatabaseOutlined
                       style={{
-                        width: 48,
-                        height: 48,
+                        fontSize: 22,
+                        color: selectedCollection === item.name
+                          ? 'var(--brand, #DE5126)'
+                          : 'var(--ink-secondary, #6B645A)',
                         flexShrink: 0,
-                        borderRadius: 'var(--radius)',
-                        background: selectedCollection === item.name
-                          ? 'linear-gradient(135deg, var(--primary), var(--accent))'
-                          : 'linear-gradient(135deg, var(--gray-100), var(--gray-150))',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: selectedCollection === item.name
-                          ? 'var(--shadow-glow)'
-                          : 'none',
-                        transition: 'all 0.25s ease',
                       }}
-                    >
-                      <DatabaseOutlined
-                        style={{
-                          color: selectedCollection === item.name ? '#fff' : 'var(--primary)',
-                          fontSize: 22,
-                          transition: 'color 0.25s ease',
-                        }}
-                      />
-                    </div>
+                    />
                     <div style={{ minWidth: 0 }}>
                       <Space size={8} style={{ flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink, #1C1A17)' }}>
                           {item.name}
                         </span>
                         {selectedCollection === item.name && (
-                          <Tag
-                            style={{
-                                              background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-                                              color: '#fff',
-                                              border: 'none',
-                                              fontWeight: 500,
-                                            }}
-                          >
-                            当前
-                          </Tag>
+                          <span className="op-tag">当前</span>
                         )}
                       </Space>
-                      <div style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 13 }}>
+                      <div style={{
+                        color: 'var(--ink-secondary, #6B645A)',
+                        marginTop: 4,
+                        fontSize: 13,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                      >
                         {item.chunk_count.toLocaleString()} 个切片
                       </div>
                     </div>
                   </div>
                   <Space onClick={(e) => e.stopPropagation()} size={4}>
                     <Button
+                      className="op-link"
                       icon={<EditOutlined />}
                       size="small"
                       type="text"
-                      style={{
-                        color: 'var(--text-secondary)',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)';
-                        (e.currentTarget as HTMLButtonElement).style.background = '#f0f4ff';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                      }}
                       onClick={() => { setRenameTarget(item.name); setNameInput(item.name); setModalOpen('rename'); }}
                     >
                       重命名
@@ -215,18 +163,17 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
                       cancelText="取消"
                     >
                       <Button
+                        className="op-link-danger"
                         icon={<DeleteOutlined />}
                         size="small"
                         type="text"
-                        danger
-                        style={{ transition: 'all 0.2s ease' }}
                       >
                         删除
                       </Button>
                     </Popconfirm>
                   </Space>
                 </div>
-              </Card>
+              </div>
             </List.Item>
           )}
         />
@@ -238,8 +185,18 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
         onOk={modalOpen === 'create' ? handleCreate : handleRename}
         onCancel={() => setModalOpen(null)}
         okText={modalOpen === 'create' ? '创建' : '重命名'}
+        className="op-modal"
+        styles={{
+          content: {
+            border: '1.5px solid var(--ink, #1C1A17)',
+            borderRadius: 3,
+            boxShadow: '6px 6px 0 var(--ink, #1C1A17)',
+          },
+          header: { borderBottom: '1px solid rgba(28,26,23,0.15)' },
+        }}
       >
         <Input
+          className="op-input"
           placeholder="知识库名称（2-50 个字符）"
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value)}
@@ -249,6 +206,143 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
           autoFocus
         />
       </Modal>
+
+      <style jsx>{`
+        .kb-root {
+          color: var(--ink, #1C1A17);
+        }
+        .op-card {
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-kb-item {
+          padding: 18px;
+          cursor: pointer;
+        }
+        .op-kb-item:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+        }
+        .op-kb-item:active {
+          transform: translate(0, 0);
+          box-shadow: none;
+        }
+        .op-kb-item-active {
+          background: var(--brand-soft, #FBE9E0);
+          border-color: var(--brand, #DE5126);
+        }
+        .op-btn {
+          border-radius: 3px;
+          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--bg-panel, #FFFDF8);
+          color: var(--ink, #1C1A17);
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-btn:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+        }
+        .op-btn:active {
+          transform: translate(0, 0);
+          box-shadow: none;
+        }
+        .op-btn-primary {
+          background: var(--brand, #DE5126);
+          border-color: var(--ink, #1C1A17);
+          color: #fff;
+        }
+        .op-btn-primary:hover {
+          background: var(--brand-hover, #C4431B);
+        }
+        .op-btn-primary:disabled {
+          background: var(--bg-sunken, #F5EDDF);
+          color: var(--ink-faint, #A39A8C);
+          border-color: var(--ink-faint, #A39A8C);
+        }
+        .op-link {
+          color: var(--ink-secondary, #6B645A);
+          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-link:hover {
+          color: var(--brand, #DE5126);
+        }
+        .op-link-danger {
+          color: var(--brand, #DE5126);
+          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-link-danger:hover {
+          color: var(--brand-hover, #C4431B);
+        }
+        .op-tag {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--brand-soft, #FBE9E0);
+          color: var(--brand, #DE5126);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-input {
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          background: var(--bg-panel, #FFFDF8);
+          transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-input:focus {
+          border-color: var(--brand, #DE5126);
+          outline: 2px solid var(--brand, #DE5126);
+          outline-offset: 2px;
+        }
+        .op-empty {
+          text-align: center;
+          padding: 56px 24px;
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+        }
+        .op-empty h3 {
+          margin: 16px 0 8px;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--ink, #1C1A17);
+        }
+        .op-empty p {
+          margin: 0 0 24px;
+          color: var(--ink-secondary, #6B645A);
+          font-size: 14px;
+        }
+        .op-modal :global(.ant-modal-content) {
+          background: var(--bg-panel, #FFFDF8) !important;
+          border: 1.5px solid var(--ink, #1C1A17) !important;
+          border-radius: 3px !important;
+          box-shadow: 6px 6px 0 var(--ink, #1C1A17) !important;
+        }
+        .op-modal :global(.ant-modal-header) {
+          background: var(--bg-panel, #FFFDF8) !important;
+          border-bottom: 1px solid rgba(28, 26, 23, 0.15) !important;
+        }
+        .op-modal :global(.ant-modal-title) {
+          color: var(--ink, #1C1A17) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .op-card, .op-btn, .op-link, .op-link-danger, .op-input {
+            transition: opacity 100ms ease;
+          }
+        }
+      `}</style>
     </div>
   );
 }

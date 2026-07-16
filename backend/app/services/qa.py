@@ -9,6 +9,7 @@ from app.services.token_tracker import TokenTracker, TokenCost, estimate_tokens
 from app.services.agent import agent_query
 from app.services.harness import guard_input, fallback_error
 from app.services.retrieval import AdvancedRetriever
+from app.services.feedback import feedback_store
 
 
 # ============================================================
@@ -77,6 +78,7 @@ def generate_answer(
     context_chunks: list[str],
     history: Optional[list[dict]] = None,
     system_prompt: str = "",
+    session_id: Optional[str] = None,
 ) -> tuple[str, TokenCost]:
     """调用 DeepSeek Chat API 生成回答，返回 (answer, token_cost)"""
     empty_cost = TokenCost()
@@ -93,12 +95,19 @@ def generate_answer(
 
     prompt = _build_prompt(question, context_chunks, history or [])
 
+    # 注入当前会话的历史反馈作为强制事实约束
+    system_content = system_prompt or "你是一个专业、准确的知识库问答助手。"
+    if session_id:
+        feedback_text = feedback_store.format_feedback_for_prompt(session_id)
+        if feedback_text:
+            system_content = f"{system_content}\n\n{feedback_text}"
+
     try:
         tracker = TokenTracker(client)
         response, token_cost = tracker.chat_completion(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": system_prompt or "你是一个专业、准确的知识库问答助手。"},
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.3,
@@ -120,6 +129,7 @@ def qa_query(
     top_k: int = 5,
     history: Optional[list[dict]] = None,
     system_prompt: str = "",
+    session_id: Optional[str] = None,
 ) -> dict:
     """
     完整问答流程：Agent Loop（ReAct）→ 混合检索 → LLM 生成
@@ -146,7 +156,7 @@ def qa_query(
         context_chunks: list[str],
         hist: list[dict],
     ) -> tuple[str, TokenCost]:
-        return generate_answer(q, context_chunks, hist, system_prompt)
+        return generate_answer(q, context_chunks, hist, system_prompt, session_id)
 
     # 3. Agent Loop
     try:

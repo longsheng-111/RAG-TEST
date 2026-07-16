@@ -1,6 +1,6 @@
 """
 向量存储模块 - FAISS + JSON 元数据存储
-ChromaDB 在 Windows 上存在二进制兼容性问题，改用 FAISS 作为向量检索引擎。
+项目使用 FAISS 作为向量检索引擎，元数据以 JSON 文件形式存储。
 """
 import os
 import json
@@ -8,6 +8,11 @@ import uuid
 import shutil
 from pathlib import Path
 from typing import Optional
+
+# 默认使用 HuggingFace 镜像，避免国内网络下载 BGE 模型超时
+# 用户仍可通过环境变量 HF_ENDPOINT 覆盖此设置
+if not os.environ.get("HF_ENDPOINT"):
+    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 import numpy as np
 import faiss
@@ -60,7 +65,7 @@ def encode_query(query: str) -> np.ndarray:
 
 def _get_store_dir() -> Path:
     """向量存储根目录"""
-    d = Path(settings.chroma_persist_dir)  # 复用配置名，实际为 FAISS 数据目录
+    d = Path(settings.vector_persist_dir)
     d.mkdir(parents=True, exist_ok=True)
     return d
 

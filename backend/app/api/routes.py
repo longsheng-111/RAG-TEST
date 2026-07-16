@@ -28,6 +28,7 @@ from app.services.token_tracker import (
     TokenCost,
 )
 from app.services.qa import qa_query
+from app.services.feedback import feedback_store
 from app.core.vector_store import (
     list_collections,
     create_collection,
@@ -134,6 +135,16 @@ class ExamStartRequest(BaseModel):
 class ExamNextRequest(BaseModel):
     answer: str
     top_k: int = 5
+
+
+class FeedbackRequest(BaseModel):
+    session_id: str
+    original_chunk_id: str
+    target_chunk_id: str
+    type: str  # replace | inaccurate
+    original_content: str = ""
+    target_content: str = ""
+    note: str = ""
 
 
 # ============================================================
@@ -451,6 +462,7 @@ async def chat(req: ChatRequest):
             top_k=req.top_k,
             history=history,
             system_prompt=system_prompt,
+            session_id=session.session_id,
         )
     except Exception as e:
         logger.exception("Chat QA failed")
@@ -495,6 +507,25 @@ async def chat(req: ChatRequest):
         "reasoning_steps": result.get("reasoning_steps", []),
         "queries": result.get("queries", [req.question]),
     }
+
+
+@router.post("/feedback")
+async def create_feedback(req: FeedbackRequest):
+    """接收用户反馈并持久化，后续同一会话的问答会把它注入系统提示词"""
+    try:
+        feedback = feedback_store.add_feedback(
+            session_id=req.session_id,
+            original_chunk_id=req.original_chunk_id,
+            target_chunk_id=req.target_chunk_id,
+            feedback_type=req.type,
+            original_content=req.original_content,
+            target_content=req.target_content,
+            note=req.note,
+        )
+        return {"status": "ok", "feedback": feedback}
+    except Exception as e:
+        logger.exception("Failed to save feedback")
+        raise HTTPException(status_code=500, detail="保存反馈失败")
 
 
 # ============================================================

@@ -37,7 +37,7 @@ class Session:
         self.session_id = session_id
         self.title = title
         self.persona = persona
-        self.kb_id = kb_id or settings.chroma_collection
+        self.kb_id = kb_id or settings.vector_collection
         self.mode = mode
         self.messages = messages or []
         self.created_at = created_at or datetime.now().isoformat()
@@ -135,7 +135,7 @@ class SessionManager:
             session_id=session_id,
             title=title,
             persona=persona,
-            kb_id=kb_id or settings.chroma_collection,
+            kb_id=kb_id or settings.vector_collection,
             mode=mode,
             exam_state=exam_state or {},
         )

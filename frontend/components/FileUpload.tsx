@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Card, Upload, Select, message, Typography, Space, Progress, Alert, Tag,
+  Upload, Select, message, Typography, Space, Progress, Alert,
 } from 'antd';
 import { InboxOutlined, CloudUploadOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import axios from 'axios';
 
 const { Dragger } = Upload;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Props { collectionName: string; }
 
@@ -68,34 +68,22 @@ export default function FileUpload({ collectionName }: Props) {
   }
 
   const formatTypes = [
-    { type: '文档', tags: ['.pdf', '.docx', '.md', '.txt'], color: 'blue' },
-    { type: '数据', tags: ['.xlsx', '.csv', '.json'], color: 'green' },
+    { type: '文档', tags: ['.pdf', '.docx', '.md', '.txt'] },
+    { type: '数据', tags: ['.xlsx', '.csv', '.json'] },
   ];
 
   return (
-    <div>
+    <div className="fu-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <CloudUploadOutlined style={{ fontSize: 22, color: 'var(--primary)' }} />
-          <h2 style={{ margin: 0 }}>上传文件</h2>
+          <CloudUploadOutlined style={{ fontSize: 22, color: 'var(--brand, #DE5126)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink, #1C1A17)' }}>上传文件</h2>
         </div>
       </div>
 
-      <Card style={{ marginBottom: 20 }} className="modern-card" bodyStyle={{ padding: 24 }}>
-        <div
-          style={{
-            marginBottom: 20,
-            padding: '14px 16px',
-            borderRadius: 'var(--radius)',
-            background: 'linear-gradient(135deg, #f8fafc, #f0f4ff)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Text strong style={{ color: 'var(--text-primary)', fontSize: 14 }}>
+      <div className="op-card" style={{ marginBottom: 20, padding: 24 }}>
+        <div className="op-bar">
+          <Text strong style={{ color: 'var(--ink, #1C1A17)', fontSize: 14 }}>
             目标知识库
           </Text>
           <Select
@@ -103,23 +91,21 @@ export default function FileUpload({ collectionName }: Props) {
             onChange={setTargetCollection}
             options={collectionOptions}
             style={{ minWidth: 240, flex: 1 }}
-            dropdownStyle={{ borderRadius: 'var(--radius-sm)' }}
+            className="op-select"
           />
         </div>
 
-        <div className="custom-dragger">
-          <Dragger {...uploadProps} disabled={uploading}>
-            <p className="ant-upload-drag-icon">
-              <InboxOutlined style={{ color: 'var(--primary)', fontSize: 48 }} />
-            </p>
-            <p className="ant-upload-text" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
-              点击或拖拽文件到此处
-            </p>
-            <p className="ant-upload-hint" style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 420, margin: '8px auto 0' }}>
-              支持 PDF、Word、Excel、Markdown、TXT — 单个文件最大 50MB
-            </p>
-          </Dragger>
-        </div>
+        <Dragger {...uploadProps} disabled={uploading} className="op-upload">
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined style={{ color: 'var(--brand, #DE5126)', fontSize: 48 }} />
+          </p>
+          <p className="ant-upload-text" style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink, #1C1A17)' }}>
+            点击或拖拽文件到此处
+          </p>
+          <p className="ant-upload-hint" style={{ fontSize: 13, color: 'var(--ink-secondary, #6B645A)', maxWidth: 420, margin: '8px auto 0' }}>
+            支持 PDF、Word、Excel、Markdown、TXT — 单个文件最大 50MB
+          </p>
+        </Dragger>
 
         {uploading && (
           <div style={{ marginTop: 20 }}>
@@ -127,12 +113,12 @@ export default function FileUpload({ collectionName }: Props) {
               percent={99}
               status="active"
               format={() => '处理中...'}
-              strokeColor={{ from: 'var(--primary)', to: 'var(--accent)' }}
-              trailColor="rgba(99,102,241,0.1)"
+              strokeColor="var(--brand, #DE5126)"
+              trailColor="var(--bg-sunken, #F5EDDF)"
             />
           </div>
         )}
-      </Card>
+      </div>
 
       {uploadResult && (
         <Alert
@@ -149,56 +135,116 @@ export default function FileUpload({ collectionName }: Props) {
           }
           style={{
             marginBottom: 20,
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid #bbf7d0',
-            background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)',
-            boxShadow: 'var(--shadow-md)',
+            background: 'var(--bg-panel, #FFFDF8)',
+            border: '1.5px solid var(--ink, #1C1A17)',
+            borderRadius: 3,
+            boxShadow: 'none',
           }}
         />
       )}
 
-      <Card
-        title={<span style={{ fontWeight: 700, fontSize: 15 }}>支持格式</span>}
-        className="modern-card"
-        bodyStyle={{ padding: '20px 24px' }}
-      >
-        <div style={{ display: 'grid', gap: 16 }}>
-          {formatTypes.map((group) => (
-            <div
-              key={group.type}
-              style={{
-                padding: 14,
-                borderRadius: 'var(--radius)',
-                background: 'var(--bg-page)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <Text strong style={{ fontSize: 13, color: 'var(--text-primary)', display: 'block', marginBottom: 10 }}>
-                {group.type}
-              </Text>
-              <Space wrap size={8}>
-                {group.tags.map((t) => (
-                  <Tag
-                    key={t}
-                    color={group.color}
-                    style={{
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '4px 10px',
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {t}
-                  </Tag>
-                ))}
-              </Space>
-            </div>
-          ))}
+      <div className="op-card">
+        <div className="op-card-header">支持格式</div>
+        <div style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'grid', gap: 16 }}>
+            {formatTypes.map((group) => (
+              <div
+                key={group.type}
+                className="op-format-group"
+              >
+                <Text strong style={{ fontSize: 13, color: 'var(--ink, #1C1A17)', display: 'block', marginBottom: 10 }}>
+                  {group.type}
+                </Text>
+                <Space wrap size={8}>
+                  {group.tags.map((t) => (
+                    <span key={t} className="op-tag-sunken" style={{ fontFamily: '"JetBrains Mono", "SF Mono", Consolas, monospace' }}>
+                      {t}
+                    </span>
+                  ))}
+                </Space>
+              </div>
+            ))}
+          </div>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16, color: 'var(--ink-faint, #A39A8C)' }}>
+            * 扫描版 PDF 需要配置 DashScope API Key 进行 OCR 识别
+          </Text>
         </div>
-        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16 }}>
-          * 扫描版 PDF 需要配置 DashScope API Key 进行 OCR 识别
-        </Text>
-      </Card>
+      </div>
+
+      <style jsx>{`
+        .fu-root {
+          color: var(--ink, #1C1A17);
+        }
+        .op-card {
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-card-header {
+          padding: 14px 24px;
+          border-bottom: 1px solid rgba(28, 26, 23, 0.15);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--ink, #1C1A17);
+        }
+        .op-bar {
+          margin-bottom: 20px;
+          padding: 14px 16px;
+          border-radius: 3px;
+          background: var(--bg-sunken, #F5EDDF);
+          border: 1.5px solid var(--ink, #1C1A17);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+        .op-select :global(.ant-select-selector) {
+          border: 1.5px solid var(--ink, #1C1A17) !important;
+          border-radius: 3px !important;
+          background: var(--bg-panel, #FFFDF8) !important;
+        }
+        .op-select :global(.ant-select-focused .ant-select-selector) {
+          border-color: var(--brand, #DE5126) !important;
+          outline: 2px solid var(--brand, #DE5126) !important;
+          outline-offset: 2px !important;
+        }
+        .op-upload :global(.ant-upload-drag) {
+          background: var(--bg-panel, #FFFDF8) !important;
+          border: 1.5px dashed var(--ink-faint, #A39A8C) !important;
+          border-radius: 3px !important;
+          transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-upload :global(.ant-upload-drag:hover) {
+          border-color: var(--brand, #DE5126) !important;
+          background: var(--brand-soft, #FBE9E0) !important;
+        }
+        .op-tag-sunken {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--bg-sunken, #F5EDDF);
+          color: var(--ink, #1C1A17);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-format-group {
+          padding: 14px;
+          border-radius: 3px;
+          background: var(--bg-paper, #FFF6EC);
+          border: 1.5px solid var(--ink, #1C1A17);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .op-card {
+            transition: opacity 100ms ease;
+          }
+        }
+      `}</style>
     </div>
   );
 }

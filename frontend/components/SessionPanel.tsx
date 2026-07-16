@@ -33,12 +33,15 @@ interface Props {
   refreshTrigger?: number;
 }
 
-const PERSONA_GRADIENTS: Record<string, string> = {
-  default: 'linear-gradient(135deg, #ff6b6b, #ff8a89)',
-  frontend: 'linear-gradient(135deg, #00c9a7, #33d6bc)',
-  backend: 'linear-gradient(135deg, #4a90e2, #6ba8f0)',
-  interview: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-};
+/* Warm-paper workbook palette (local fallback until global tokens land) */
+const INK = '#1C1A17';
+const INK_SECONDARY = '#6B645A';
+const INK_FAINT = '#A39A8C';
+const PANEL = '#FFFDF8';
+const PAPER = '#FFF6EC';
+const BRAND = '#DE5126';
+const BRAND_SOFT = '#FBE9E0';
+const BRAND_HOVER = '#C4431B';
 
 export default function SessionPanel({
   activeSessionId, onSelectSession, onCreateSession, refreshTrigger = 0,
@@ -99,23 +102,18 @@ export default function SessionPanel({
     } catch { return iso; }
   };
 
+  const stickerRotation = (index: number) => index % 2 === 0 ? -1.5 : 1.5;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="dx-session-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
       <div style={{
         padding: '14px 14px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: 'var(--shadow-glow)',
-          }}>
-            <MessageOutlined style={{ color: '#fff', fontSize: 14 }} />
-          </div>
-          <Text strong style={{ fontSize: 15, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
+          <MessageOutlined style={{ color: BRAND, fontSize: 18 }} />
+          <Text strong style={{ fontSize: 15, color: INK, letterSpacing: '-0.2px' }}>
             会话
           </Text>
         </div>
@@ -125,13 +123,16 @@ export default function SessionPanel({
             icon={<PlusOutlined />}
             onClick={onCreateSession}
             style={{
-              borderRadius: 8,
+              borderRadius: '3px !important',
               height: 32,
               width: 32,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 0,
+              background: `${BRAND} !important`,
+              border: `1.5px solid ${INK} !important`,
+              boxShadow: 'none !important',
             }}
           />
         </Tooltip>
@@ -142,51 +143,53 @@ export default function SessionPanel({
         {loading ? (
           <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
         ) : sessions.length === 0 ? (
-          <div style={{ textAlign: 'center', paddingTop: 48 }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 20,
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-              margin: '0 auto 16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: 'var(--shadow-glow)',
-            }}>
-              <MessageOutlined style={{ color: '#fff', fontSize: 28 }} />
-            </div>
-            <Text style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: 48,
+            gap: 12,
+          }}>
+            <MessageOutlined style={{ color: INK_FAINT, fontSize: 32 }} />
+            <Text style={{ color: INK_SECONDARY, fontSize: 14 }}>
               暂无会话
             </Text>
-            <div style={{ marginTop: 12 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={onCreateSession}
-              >
-                开始对话
-              </Button>
-            </div>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              size="small"
+              onClick={onCreateSession}
+              style={{
+                borderRadius: '3px !important',
+                background: `${BRAND} !important`,
+                border: `1.5px solid ${INK} !important`,
+                boxShadow: 'none !important',
+              }}
+            >
+              开始对话
+            </Button>
           </div>
         ) : (
           <List
             dataSource={sessions}
-            renderItem={(session) => {
+            renderItem={(session, index) => {
               const isActive = activeSessionId === session.session_id;
               return (
                 <div
                   onClick={() => onSelectSession(session)}
-                  className={isActive ? 'modern-card modern-card-active' : 'modern-card'}
+                  className={`dx-session-card ${isActive ? 'dx-session-card-active' : ''}`}
                   style={{
                     padding: '10px 12px',
                     marginBottom: 8,
                     cursor: 'pointer',
                     position: 'relative',
                     overflow: 'hidden',
-                    borderLeft: isActive ? '3px solid var(--primary-light)' : '3px solid transparent',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 200ms cubic-bezier(0.25, 0.8, 0.25, 1)',
                   }}
                 >
                   <div
-                    className="session-actions"
+                    className="dx-session-actions"
                     style={{
                       position: 'absolute',
                       top: 6,
@@ -194,27 +197,35 @@ export default function SessionPanel({
                       display: 'flex',
                       gap: 2,
                       opacity: isActive ? 1 : 0,
-                      transition: 'opacity 0.2s ease',
+                      transition: 'opacity 200ms cubic-bezier(0.25, 0.8, 0.25, 1)',
                       zIndex: 2,
                     }}
                   >
-                    <Tooltip title="Export">
+                    <Tooltip title="导出">
                       <Button type="text" size="small"
-                        style={{ width: 22, height: 22, padding: 0, borderRadius: 5 }}
-                        icon={<DownloadOutlined style={{ fontSize: 11, color: 'var(--text-secondary)' }} />}
+                        style={{
+                          width: 22, height: 22, padding: 0, borderRadius: 3,
+                          border: 'none',
+                          background: 'transparent',
+                        }}
+                        icon={<DownloadOutlined style={{ fontSize: 11, color: INK_SECONDARY }} />}
                         onClick={(e) => handleExport(e, session.session_id)} />
                     </Tooltip>
-                    <Popconfirm title="Delete this session?" onConfirm={(e) => handleDelete(e as any, session.session_id)}
-                      okText="Yes" cancelText="No">
-                      <Button type="text" size="small" danger
-                        style={{ width: 22, height: 22, padding: 0, borderRadius: 5 }}
-                        icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                    <Popconfirm title="删除该会话？" onConfirm={(e) => handleDelete(e as any, session.session_id)}
+                      okText="删除" cancelText="取消">
+                      <Button type="text" size="small"
+                        style={{
+                          width: 22, height: 22, padding: 0, borderRadius: 3,
+                          border: 'none',
+                          background: 'transparent',
+                        }}
+                        icon={<DeleteOutlined style={{ fontSize: 11, color: BRAND }} />}
                         onClick={(e) => e.stopPropagation()} />
                     </Popconfirm>
                   </div>
                   <div style={{ marginBottom: 6, paddingRight: 28 }}>
-                    <Text strong style={{ fontSize: 13, lineHeight: '1.4', color: 'var(--text-primary)' }} ellipsis>
-                      {session.title || 'New Session'}
+                    <Text strong style={{ fontSize: 13, lineHeight: '1.4', color: INK }} ellipsis>
+                      {session.title || '新会话'}
                     </Text>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 4px', marginBottom: 6 }}>
@@ -222,12 +233,14 @@ export default function SessionPanel({
                       style={{
                         fontSize: 10,
                         lineHeight: '18px',
-                        border: 'none',
-                        borderRadius: 6,
-                        color: '#fff',
-                        background: PERSONA_GRADIENTS[session.persona] || PERSONA_GRADIENTS.default,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                        border: `1.5px solid ${INK} !important`,
+                        borderRadius: '3px !important',
+                        color: INK,
+                        background: BRAND_SOFT,
                         margin: 0,
+                        fontWeight: 500,
+                        transform: `rotate(${stickerRotation(index)}deg)`,
+                        transformOrigin: 'center center',
                       }}
                     >
                       {personas[session.persona] || session.persona}
@@ -237,11 +250,14 @@ export default function SessionPanel({
                         style={{
                           fontSize: 10,
                           lineHeight: '18px',
-                          border: 'none',
-                          borderRadius: 6,
+                          border: `1.5px solid ${INK} !important`,
+                          borderRadius: '3px !important',
                           margin: 0,
-                          color: '#7e22ce',
-                          background: 'linear-gradient(135deg, #f3e8ff, #ede9fe)',
+                          color: INK,
+                          background: PAPER,
+                          fontWeight: 500,
+                          transform: `rotate(${-stickerRotation(index)}deg)`,
+                          transformOrigin: 'center center',
                         }}
                       >
                         模拟面试
@@ -249,13 +265,19 @@ export default function SessionPanel({
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <ClockCircleOutlined style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }} />
-                    <Text style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {formatTime(session.updated_at)} · {session.message_count} msgs
+                    <ClockCircleOutlined style={{ fontSize: 10, color: INK_FAINT, flexShrink: 0 }} />
+                    <Text style={{ fontSize: 10, color: INK_FAINT, whiteSpace: 'nowrap' }}>
+                      {formatTime(session.updated_at)} · {session.message_count} 条消息
                     </Text>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    <Text style={{
+                      fontSize: 11,
+                      color: INK_FAINT,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
                       {session.total_tokens.toLocaleString()} tokens
                     </Text>
                   </div>
@@ -265,6 +287,38 @@ export default function SessionPanel({
           />
         )}
       </div>
+
+      <style>{`
+        .dx-session-card {
+          background: ${PANEL};
+          border: 1.5px solid ${INK};
+          border-radius: 3px;
+          box-shadow: none;
+        }
+        .dx-session-card-active {
+          background: ${BRAND_SOFT} !important;
+          border-color: ${INK} !important;
+          box-shadow: none !important;
+        }
+        .dx-session-card:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 ${INK};
+        }
+        .dx-session-card:hover .dx-session-actions,
+        .dx-session-card-active .dx-session-actions {
+          opacity: 1 !important;
+        }
+        .dx-session-panel .ant-btn-primary:hover {
+          background: ${BRAND_HOVER} !important;
+          box-shadow: 3px 3px 0 ${INK} !important;
+          transform: translate(-1px, -1px);
+        }
+        .dx-session-panel .ant-btn-primary:active {
+          background: ${BRAND_HOVER} !important;
+          box-shadow: none !important;
+          transform: translate(0, 0);
+        }
+      `}</style>
     </div>
   );
 }

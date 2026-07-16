@@ -116,8 +116,8 @@ def main():
     )
     parser.add_argument(
         "--collection",
-        default=settings.chroma_collection,
-        help=f"目标知识库名称，默认: {settings.chroma_collection}",
+        default=settings.vector_collection,
+        help=f"目标知识库名称，默认: {settings.vector_collection}",
     )
     parser.add_argument(
         "--force",

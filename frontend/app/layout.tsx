@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { ConfigProvider, Layout, Tag, Typography } from 'antd';
+import { ConfigProvider, Layout, Typography } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
@@ -12,7 +13,6 @@ import QAPanel from '@/components/QAPanel';
 import ExaminerPanel from '@/components/ExaminerPanel';
 import FileManager from '@/components/FileManager';
 import NewSessionModal from '@/components/NewSessionModal';
-import RibbonBackground from '@/components/RibbonBackground';
 import axios from 'axios';
 
 const { Content } = Layout;
@@ -79,10 +79,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div style={{
             width: 200,
             flexShrink: 0,
-            borderRight: '1px solid var(--border)',
-            background: 'var(--bg-card)',
+            borderRight: '1.5px solid var(--ink)',
+            background: 'var(--bg-panel)',
             height: '100%',
-            boxShadow: 'var(--shadow-sm)',
             zIndex: 1,
           }}>
             <SessionPanel
@@ -93,32 +92,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             />
           </div>
           {/* Chat Area */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-page)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-paper)' }}>
             <div style={{
               padding: '10px 16px',
-              borderBottom: '1px solid var(--border)',
-              background: 'var(--bg-card)',
+              borderBottom: '1px solid rgba(28,26,23,0.15)',
+              background: 'var(--bg-panel)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <Tag
+              <span
                 style={{
-                  margin: 0,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 600,
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '4px 12px',
-                  color: qaMode === 'qa' ? '#2c6fc7' : '#7e22ce',
-                  background: qaMode === 'qa'
-                    ? 'linear-gradient(135deg, #d2e4fa, #edf4fd)'
-                    : 'linear-gradient(135deg, #f3e8ff, #ede9fe)',
+                  color: 'var(--ink)',
+                  borderBottom: '2px solid var(--brand)',
+                  paddingBottom: 2,
                 }}
               >
                 {qaMode === 'qa' ? '知识问答' : '模拟面试'}
-              </Tag>
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              </span>
+              <Text style={{ fontSize: 12, color: 'var(--ink-secondary)' }}>
                 {qaMode === 'qa' ? '用户提问，AI 检索回答' : 'AI 出题，用户回答并评分'}
               </Text>
             </div>
@@ -141,10 +135,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 )
               ) : (
                 <div className="empty-state">
-                  <div className="empty-state-icon">DX</div>
-                  <h2 className="empty-state-title">Welcome to DX-RAG</h2>
+                  <div className="empty-state-icon">
+                    <InboxOutlined />
+                  </div>
+                  <span className="empty-state-title">选择一个会话开始</span>
                   <span className="empty-state-desc">
-                    选择或创建一个会话，开始您的知识库问答之旅
+                    在左侧面板新建或选择会话，开始知识库问答
                   </span>
                 </div>
               )}
@@ -186,87 +182,48 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN">
       <body>
-        <RibbonBackground />
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-        <ConfigProvider
-          locale={zhCN}
-          theme={{
-            token: {
-              colorPrimary: '#ff6b6b',
-              colorPrimaryHover: '#f25454',
-              colorPrimaryActive: '#d64040',
-              borderRadius: 12,
-              borderRadiusSM: 8,
-              borderRadiusLG: 16,
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif",
-              fontSize: 14,
-              colorBgContainer: '#ffffff',
-              colorBgLayout: '#fbfcfd',
-              colorText: '#1a1a1a',
-              colorTextSecondary: '#4b5563',
-              colorBorder: '#eceff3',
-              controlHeight: 38,
-            },
-            components: {
-              Menu: {
-                itemBg: 'transparent',
-                itemSelectedBg: 'rgba(255,107,107,0.08)',
-                itemHoverBg: 'rgba(255,107,107,0.06)',
-                itemHoverColor: '#ff6b6b',
-                itemSelectedColor: '#ff6b6b',
-                itemBorderRadius: 12,
-                iconMarginInlineEnd: 12,
+          <ConfigProvider
+            locale={zhCN}
+            theme={{
+              token: {
+                colorPrimary: '#DE5126',
+                colorText: '#1C1A17',
+                colorBgLayout: '#FFF6EC',
+                colorBgContainer: '#FFFDF8',
+                colorBorder: '#1C1A17',
+                colorBorderSecondary: 'rgba(28,26,23,0.15)',
+                borderRadius: 3,
+                fontSize: 14,
+                fontFamily: '-apple-system, "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif',
+                boxShadow: '3px 3px 0 #1C1A17',
+                boxShadowSecondary: '3px 3px 0 rgba(28,26,23,0.25)',
               },
-              Button: {
-                primaryShadow: '0 4px 12px rgba(255,107,107,0.25)',
-                borderRadius: 12,
-                borderRadiusSM: 8,
+              components: {
+                Button: { borderRadius: 3, primaryShadow: 'none' },
+                Modal: { borderRadiusLG: 3 },
+                Tag: { borderRadiusSM: 3 },
               },
-              Input: {
-                borderRadius: 12,
-                paddingInline: 12,
-              },
-              Select: {
-                borderRadius: 12,
-              },
-              Card: {
-                borderRadius: 16,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-              },
-              Progress: {
-                defaultColor: '#ff6b6b',
-                colorSuccess: '#00c9a7',
-                colorError: '#ff6b6b',
-              },
-              Tag: {
-                borderRadius: 8,
-              },
-              Segmented: {
-                itemSelectedBg: '#ffffff',
-                itemHoverBg: 'rgba(255,107,107,0.06)',
-                itemActiveBg: '#ffffff',
-              },
-            },
-          }}
-        >
-          <Layout style={{ minHeight: '100vh', background: 'rgba(251, 252, 253, 0.92)' }}>
-            <Sidebar
-              activeMenu={activeMenu}
-              onMenuChange={setActiveMenu}
-            />
-            <Layout style={{ background: 'transparent' }}>
-              <Content style={{ height: '100vh', overflow: 'hidden' }}>
-                {renderContent()}
-              </Content>
+            }}
+          >
+            <Layout style={{ minHeight: '100vh', background: 'var(--bg-paper)' }}>
+              <Sidebar
+                activeMenu={activeMenu}
+                onMenuChange={setActiveMenu}
+              />
+              <Layout style={{ background: 'transparent' }}>
+                <Content style={{ height: '100vh', overflow: 'hidden' }}>
+                  {renderContent()}
+                </Content>
+              </Layout>
             </Layout>
-          </Layout>
-          <NewSessionModal
-            open={newSessionOpen}
-            onCancel={() => setNewSessionOpen(false)}
-            onCreated={handleSessionCreated}
-            defaultCollection={selectedCollection}
-          />
-        </ConfigProvider>
+            <NewSessionModal
+              open={newSessionOpen}
+              onCancel={() => setNewSessionOpen(false)}
+              onCreated={handleSessionCreated}
+              defaultCollection={selectedCollection}
+            />
+          </ConfigProvider>
         </div>
       </body>
     </html>

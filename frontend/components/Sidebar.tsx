@@ -19,6 +19,15 @@ interface SidebarProps {
   onMenuChange: (key: MenuKey) => void;
 }
 
+/* Warm-paper workbook palette (local fallback until global tokens land) */
+const INK = '#1C1A17';
+const INK_SECONDARY = '#6B645A';
+const PANEL = '#FFFDF8';
+const SUNKEN = '#F5EDDF';
+const BRAND = '#DE5126';
+const BRAND_SOFT = '#FBE9E0';
+const PAPER = '#FFF6EC';
+
 const menuItems = [
   { key: 'qa', icon: <MessageSquare size={18} />, label: '知识问答' },
   { key: 'knowledge-base', icon: <Database size={18} />, label: '知识库管理' },
@@ -39,11 +48,11 @@ export default function Sidebar({
       collapsed={collapsed}
       width={220}
       collapsedWidth={60}
-      className="glass-sidebar"
+      className="dx-sidebar"
       style={{
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: 'var(--shadow-lg)',
+        background: PANEL,
+        borderRight: `1.5px solid ${INK}`,
+        boxShadow: 'none',
       }}
     >
       <div style={{
@@ -53,6 +62,7 @@ export default function Sidebar({
         flexDirection: 'column',
         overflow: 'hidden',
         position: 'relative',
+        background: PANEL,
       }}>
         {/* Brand */}
         <div
@@ -63,13 +73,54 @@ export default function Sidebar({
             padding: collapsed ? 0 : '0 16px',
             justifyContent: collapsed ? 'center' : 'flex-start',
             gap: collapsed ? 0 : 12,
+            borderBottom: `1px solid ${INK}26`,
+            background: PANEL,
           }}
         >
-          <div className="sidebar-brand-icon">DX</div>
+          <div
+            className="sidebar-brand-icon"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 3,
+              background: BRAND,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: PAPER,
+              fontSize: 14,
+              fontWeight: 700,
+              boxShadow: 'none',
+            }}
+          >
+            DX
+          </div>
           {!collapsed && (
             <div>
-              <div className="sidebar-brand-text">DX-RAG</div>
-              <div className="sidebar-brand-sub">Knowledge Engine</div>
+              <div
+                className="sidebar-brand-text"
+                style={{
+                  color: INK,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  letterSpacing: '-0.3px',
+                  lineHeight: '1.2',
+                }}
+              >
+                DX-RAG
+              </div>
+              <div
+                className="sidebar-brand-sub"
+                style={{
+                  color: INK_SECONDARY,
+                  fontSize: 10,
+                  letterSpacing: '1.2px',
+                  textTransform: 'uppercase',
+                  lineHeight: '1.2',
+                }}
+              >
+                Knowledge Engine
+              </div>
             </div>
           )}
         </div>
@@ -96,7 +147,7 @@ export default function Sidebar({
           />
         </div>
 
-        {/* Bottom section: collapse toggle only */}
+        {/* Bottom section: collapse toggle */}
         <div style={{
           flexShrink: 0,
           padding: '0 14px 16px',
@@ -105,35 +156,68 @@ export default function Sidebar({
         }}>
           <button
             onClick={() => setCollapsed(!collapsed)}
+            className="dx-sidebar-collapse"
             style={{
               width: '100%',
               height: 32,
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-muted)',
+              borderRadius: 3,
+              border: `1.5px solid ${INK}`,
+              background: PANEL,
+              color: INK_SECONDARY,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--coral-50)';
-              e.currentTarget.style.color = 'var(--coral-600)';
-              e.currentTarget.style.borderColor = 'var(--coral-200)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-card)';
-              e.currentTarget.style.color = 'var(--text-muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
+              transition: 'all 200ms cubic-bezier(0.25, 0.8, 0.25, 1)',
+              boxShadow: 'none',
             }}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
       </div>
+
+      <style>{`
+        .dx-sidebar .ant-menu {
+          background: transparent !important;
+          border-inline-end: none !important;
+        }
+        .dx-sidebar .ant-menu-item {
+          color: ${INK_SECONDARY} !important;
+          border-radius: 3px !important;
+          margin: 4px 0 !important;
+          border: 1.5px solid transparent !important;
+          transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        }
+        .dx-sidebar .ant-menu-item:hover {
+          color: ${INK} !important;
+          background: ${SUNKEN} !important;
+          border-color: ${INK} !important;
+        }
+        .dx-sidebar .ant-menu-item-selected,
+        .dx-sidebar .ant-menu-item-active {
+          color: ${INK} !important;
+          background: ${BRAND_SOFT} !important;
+          border-color: ${INK} !important;
+          font-weight: 600 !important;
+        }
+        .dx-sidebar .ant-menu-item-selected::after {
+          display: none !important;
+        }
+        .dx-sidebar .ant-menu-inline .ant-menu-item-selected::after {
+          opacity: 0 !important;
+        }
+        .dx-sidebar-collapse:hover {
+          transform: translate(-1px, -1px) !important;
+          box-shadow: 3px 3px 0 ${INK} !important;
+          color: ${INK} !important;
+          background: ${PAPER} !important;
+        }
+        .dx-sidebar-collapse:active {
+          transform: translate(0, 0) !important;
+          box-shadow: none !important;
+        }
+      `}</style>
     </Sider>
   );
 }

@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 创建数据目录
-RUN mkdir -p chroma_db models uploads
+RUN mkdir -p vector_db models uploads
 
 EXPOSE 8000
 

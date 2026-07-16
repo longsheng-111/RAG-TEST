@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Card, Button, Input, Tag, Progress, Typography, Space, Spin, Alert, Divider, Segmented,
+  Button, Input, Progress, Typography, Space, Spin, Alert, Divider, Segmented,
 } from 'antd';
 import TextareaAutosize from 'react-textarea-autosize';
 import axios from 'axios';
@@ -64,19 +64,22 @@ interface Props {
 
 const MAX_QUESTIONS = 5;
 
+function scoreColor(score: number) {
+  if (score >= 7) return 'var(--cite-3, #7CB518)';
+  if (score >= 5) return 'var(--cite-4, #E5A50A)';
+  return 'var(--brand, #DE5126)';
+}
+
 function ReferencePointsCard({ points }: { points: string[] }) {
   return (
-    <Card
-      size="small"
-      style={{ marginBottom: 12, borderRadius: 8, background: 'var(--gray-50)', borderColor: 'var(--border)' }}
-      title={<Text strong style={{ fontSize: 12 }}>参考答案要点</Text>}
-    >
-      <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+    <div className="op-hint-box" style={{ marginBottom: 12 }}>
+      <Text strong style={{ fontSize: 12, color: 'var(--ink, #1C1A17)' }}>参考答案要点</Text>
+      <ol style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--ink-secondary, #6B645A)', lineHeight: 1.7 }}>
         {points.map((p, i) => (
           <li key={i}>{p}</li>
         ))}
       </ol>
-    </Card>
+    </div>
   );
 }
 
@@ -85,34 +88,31 @@ function PointsResultCard({ points }: { points?: ExamPoint[] }) {
   const hitCount = points.filter((p) => p.hit).length;
   return (
     <div style={{ marginTop: 12 }}>
-      <Text strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+      <Text strong style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}>
         要点命中 {hitCount} / {points.length}
       </Text>
-      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {points.map((p, i) => (
           <div
             key={i}
+            className="op-point"
             style={{
-              padding: '8px 10px',
-              borderRadius: 6,
-              background: p.hit ? '#ecfdf5' : '#fef2f2',
-              border: `1px solid ${p.hit ? '#a7f3d0' : '#fecaca'}`,
-              fontSize: 12,
+              borderColor: p.hit ? 'var(--cite-3, #7CB518)' : 'var(--brand, #DE5126)',
             }}
           >
             <Space size={6}>
               {p.hit ? (
-                <CheckCircle2 size={14} color="var(--success)" />
+                <CheckCircle2 size={14} color="var(--cite-3, #7CB518)" />
               ) : (
-                <AlertTriangle size={14} color="var(--error)" />
+                <AlertTriangle size={14} color="var(--brand, #DE5126)" />
               )}
-              <Text style={{ color: p.hit ? 'var(--success)' : 'var(--error)', fontWeight: 500 }}>
+              <Text style={{ color: 'var(--ink, #1C1A17)', fontWeight: 500 }}>
                 {p.hit ? '命中' : '未命中'}
               </Text>
             </Space>
-            <div style={{ marginTop: 4, color: 'var(--text-secondary)' }}>{p.point}</div>
+            <div style={{ marginTop: 4, color: 'var(--ink-secondary, #6B645A)' }}>{p.point}</div>
             {p.evidence && (
-              <div style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 11 }}>
+              <div style={{ marginTop: 4, color: 'var(--ink-faint, #A39A8C)', fontSize: 11 }}>
                 依据：{p.evidence}
               </div>
             )}
@@ -208,60 +208,128 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   if (phase === 'config') {
     return (
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px' }}>
-        <Card
-          title={
+      <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px' }}>
+        <div className="op-card">
+          <div className="op-card-header">
             <Space>
-              <GraduationCap size={20} style={{ color: 'var(--brand-600)' }} />
+              <GraduationCap size={20} color="var(--brand, #DE5126)" />
               <span>配置模拟面试</span>
             </Space>
+          </div>
+          <div style={{ padding: 24 }}>
+            <Space direction="vertical" size={20} style={{ width: '100%' }}>
+              <div>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>目标岗位</Text>
+                <Input
+                  className="op-input"
+                  placeholder="例如：后端开发工程师"
+                  value={targetPosition}
+                  onChange={(e) => setTargetPosition(e.target.value)}
+                  size="large"
+                />
+              </div>
+              <div>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>面试方向</Text>
+                <Input
+                  className="op-input"
+                  placeholder="例如：Java 并发 / Redis / Vue 响应式"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  size="large"
+                />
+              </div>
+              <div>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>题目数量</Text>
+                <Segmented
+                  value={MAX_QUESTIONS}
+                  options={[{ label: `${MAX_QUESTIONS} 题`, value: MAX_QUESTIONS }]}
+                  disabled
+                />
+                <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--ink-faint, #A39A8C)' }}>
+                  默认 5 题，由浅入深；单题最多追问 2 次
+                </Text>
+              </div>
+              <Button
+                className="op-btn op-btn-primary"
+                size="large"
+                icon={<Play size={16} />}
+                onClick={startExam}
+                loading={loading}
+                disabled={!targetPosition.trim() || !topic.trim()}
+                block
+              >
+                开始面试
+              </Button>
+            </Space>
+          </div>
+        </div>
+
+        <style jsx>{`
+          .ep-root {
+            color: var(--ink, #1C1A17);
           }
-          style={{ borderRadius: 12 }}
-        >
-          <Space direction="vertical" size={20} style={{ width: '100%' }}>
-            <div>
-              <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>目标岗位</Text>
-              <Input
-                placeholder="例如：后端开发工程师"
-                value={targetPosition}
-                onChange={(e) => setTargetPosition(e.target.value)}
-                size="large"
-              />
-            </div>
-            <div>
-              <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>面试方向</Text>
-              <Input
-                placeholder="例如：Java 并发 / Redis / Vue 响应式"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                size="large"
-              />
-            </div>
-            <div>
-              <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>题目数量</Text>
-              <Segmented
-                value={MAX_QUESTIONS}
-                options={[{ label: `${MAX_QUESTIONS} 题`, value: MAX_QUESTIONS }]}
-                disabled
-              />
-              <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
-                默认 5 题，由浅入深；单题最多追问 2 次
-              </Text>
-            </div>
-            <Button
-              type="primary"
-              size="large"
-              icon={<Play size={16} />}
-              onClick={startExam}
-              loading={loading}
-              disabled={!targetPosition.trim() || !topic.trim()}
-              block
-              style={{ background: 'var(--brand-600)' }}
-            >
-              开始面试
-            </Button>
-          </Space>
-        </Card>
+          .op-card {
+            background: var(--bg-panel, #FFFDF8);
+            border: 1.5px solid var(--ink, #1C1A17);
+            border-radius: 3px;
+          }
+          .op-card-header {
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(28, 26, 23, 0.15);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink, #1C1A17);
+          }
+          .op-input {
+            border: 1.5px solid var(--ink, #1C1A17);
+            border-radius: 3px;
+            background: var(--bg-panel, #FFFDF8);
+            transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+              box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+          .op-input:focus {
+            border-color: var(--brand, #DE5126);
+            outline: 2px solid var(--brand, #DE5126);
+            outline-offset: 2px;
+          }
+          .op-btn {
+            border-radius: 3px;
+            border: 1.5px solid var(--ink, #1C1A17);
+            background: var(--bg-panel, #FFFDF8);
+            color: var(--ink, #1C1A17);
+            transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+              box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+              border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+              background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+              color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+          .op-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          }
+          .op-btn:active {
+            transform: translate(0, 0);
+            box-shadow: none;
+          }
+          .op-btn-primary {
+            background: var(--brand, #DE5126);
+            border-color: var(--ink, #1C1A17);
+            color: #fff;
+          }
+          .op-btn-primary:hover {
+            background: var(--brand-hover, #C4431B);
+          }
+          .op-btn-primary:disabled {
+            background: var(--bg-sunken, #F5EDDF);
+            color: var(--ink-faint, #A39A8C);
+            border-color: var(--ink-faint, #A39A8C);
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .op-card, .op-input, .op-btn {
+              transition: opacity 100ms ease;
+            }
+          }
+        `}</style>
       </div>
     );
   }
@@ -269,27 +337,16 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   if (!state) return <Spin style={{ margin: '40px auto', display: 'block' }} />;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
-      {/* Header progress */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+    <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
+      <div className="op-card" style={{ marginBottom: 16, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <Space size={16}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: 'var(--brand-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Target size={20} color="#fff" />
-            </div>
+            <Target size={24} color="var(--brand, #DE5126)" />
             <div>
-              <Title level={5} style={{ margin: 0, fontSize: 16 }}>
+              <Title level={5} style={{ margin: 0, fontSize: 16, color: 'var(--ink, #1C1A17)' }}>
                 模拟面试 · {state.question_index} / {MAX_QUESTIONS} 题
               </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}>
                 {state.status === 'follow_up' ? '追问环节' : '正式题目'}
                 {state.follow_up_count > 0 && ` · 已追问 ${state.follow_up_count} 次`}
               </Text>
@@ -297,41 +354,38 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           </Space>
           <Space size={24} align="center">
             <div style={{ textAlign: 'right' }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>当前均分</Text>
-              <Text strong style={{ fontSize: 20, color: avgScore >= 7 ? 'var(--success)' : avgScore >= 5 ? 'var(--warning)' : 'var(--error)' }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', color: 'var(--ink-secondary, #6B645A)' }}>当前均分</Text>
+              <Text strong style={{ fontSize: 20, color: scoreColor(avgScore), fontVariantNumeric: 'tabular-nums' }}>
                 {avgScore.toFixed(1)}
               </Text>
-              <Text type="secondary" style={{ fontSize: 12 }}> / 10</Text>
+              <Text type="secondary" style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}> / 10</Text>
             </div>
             <div style={{ width: 160 }}>
-              <Progress percent={progressPercent} size="small" strokeColor="var(--brand-600)" />
+              <Progress percent={progressPercent} size="small" strokeColor="var(--brand, #DE5126)" trailColor="var(--bg-sunken, #F5EDDF)" />
             </div>
           </Space>
         </div>
-      </Card>
+      </div>
 
-      {/* Question card */}
-      <Card style={{ marginBottom: 16, borderRadius: 12, borderLeft: '4px solid var(--brand-600)' }}>
-        <div style={{ fontSize: 16, lineHeight: 1.7 }}>
+      <div className="op-card" style={{ marginBottom: 16, padding: 16 }}>
+        <div style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink, #1C1A17)' }}>
           <ReactMarkdown>{state.current_question}</ReactMarkdown>
         </div>
         <Space size={8} wrap style={{ marginTop: 14 }}>
           {state.current_expectations.map((e, i) => (
-            <Tag key={i} color="blue" style={{ borderRadius: 6 }}>
+            <span key={i} className="op-tag-sunken">
               考察：{e}
-            </Tag>
+            </span>
           ))}
         </Space>
-      </Card>
+      </div>
 
-      {/* Reference points */}
       {state.reference_points && state.reference_points.length > 0 && (
         <ReferencePointsCard points={state.reference_points} />
       )}
 
-      {/* Answer input */}
       {state.status !== 'finished' && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <div className="op-card" style={{ marginBottom: 16, padding: 16 }}>
           <TextareaAutosize
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
@@ -345,29 +399,19 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
             minRows={3}
             maxRows={8}
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: 12,
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              fontSize: 14,
-              lineHeight: 1.6,
-              resize: 'none',
-              outline: 'none',
-            }}
+            className="op-textarea"
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
             <Space>
-              <Button onClick={() => submitAnswer('不知道')} disabled={loading}>
+              <Button className="op-btn" onClick={() => submitAnswer('不知道')} disabled={loading}>
                 不知道
               </Button>
-              <Button danger onClick={() => submitAnswer('结束')} disabled={loading}>
+              <Button className="op-btn op-btn-danger" onClick={() => submitAnswer('结束')} disabled={loading}>
                 结束面试
               </Button>
             </Space>
             <Button
-              type="primary"
-              className="send-btn-macaron"
+              className="op-btn op-btn-primary"
               icon={<Send size={16} />}
               onClick={() => submitAnswer()}
               loading={loading}
@@ -376,90 +420,225 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
               提交答案
             </Button>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Evaluation */}
       {state.evaluation && (
-        <Card
-          style={{
-            marginBottom: 16,
-            borderRadius: 12,
-            borderLeft: `4px solid ${state.evaluation.score >= 7 ? 'var(--success)' : state.evaluation.score >= 5 ? 'var(--warning)' : 'var(--error)'}`,
-          }}
-          title={
+        <div className="op-card" style={{ marginBottom: 16 }}>
+          <div className="op-card-header">
             <Space>
               {state.cheating_detected ? (
-                <AlertTriangle size={18} color="var(--error)" />
+                <AlertTriangle size={18} color="var(--brand, #DE5126)" />
               ) : (
-                <CheckCircle2 size={18} color={state.evaluation.score >= 7 ? 'var(--success)' : 'var(--warning)'} />
+                <CheckCircle2 size={18} color={scoreColor(state.evaluation.score)} />
               )}
               <span>评分反馈</span>
-              <Tag color={state.evaluation.score >= 7 ? 'success' : state.evaluation.score >= 5 ? 'warning' : 'error'}>
+              <span
+                className="op-tag"
+                style={{
+                  background: 'var(--bg-sunken, #F5EDDF)',
+                  color: scoreColor(state.evaluation.score),
+                }}
+              >
                 {state.evaluation.score} / 10 分
-              </Tag>
+              </span>
             </Space>
-          }
-        >
-          {state.cheating_detected && (
-            <Alert
-              message="反作弊提示"
-              description="系统检测到您的回答与参考资料或历史回答高度重合。模拟面试要求独立作答。"
-              type="warning"
-              showIcon
-              style={{ marginBottom: 12 }}
-            />
-          )}
-          <div className="markdown-body" style={{ fontSize: 14 }}>
-            <ReactMarkdown>{state.evaluation.raw}</ReactMarkdown>
           </div>
-          <PointsResultCard points={state.evaluation.points} />
-        </Card>
+          <div style={{ padding: 16 }}>
+            {state.cheating_detected && (
+              <Alert
+                message="反作弊提示"
+                description="系统检测到您的回答与参考资料或历史回答高度重合。模拟面试要求独立作答。"
+                type="warning"
+                showIcon
+                style={{
+                  marginBottom: 12,
+                  background: 'var(--brand-soft, #FBE9E0)',
+                  border: '1.5px solid var(--ink, #1C1A17)',
+                  borderRadius: 3,
+                  boxShadow: 'none',
+                }}
+              />
+            )}
+            <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink, #1C1A17)' }}>
+              <ReactMarkdown>{state.evaluation.raw}</ReactMarkdown>
+            </div>
+            <PointsResultCard points={state.evaluation.points} />
+          </div>
+        </div>
       )}
 
-      {/* Summary */}
       {state.summary && (
-        <Card
-          style={{ borderRadius: 12, borderLeft: '4px solid var(--success)' }}
-          title={
+        <div className="op-card">
+          <div className="op-card-header">
             <Space>
-              <Flag size={18} color="var(--success)" />
+              <Flag size={18} color="var(--cite-3, #7CB518)" />
               <span>面试总结</span>
-              <Tag color="success">总体 {state.summary.total_score} / 100 分</Tag>
+              <span className="op-tag" style={{ background: 'var(--bg-sunken, #F5EDDF)', color: 'var(--cite-3, #7CB518)' }}>
+                总体 {state.summary.total_score} / 100 分
+              </span>
             </Space>
-          }
-        >
-          <div className="markdown-body" style={{ fontSize: 14 }}>
-            <ReactMarkdown>{state.summary.raw}</ReactMarkdown>
           </div>
-          {state.weak_points && state.weak_points.length > 0 && (
-            <>
-              <Divider />
-              <div>
-                <Text strong style={{ fontSize: 13, color: 'var(--error)' }}>
-                  高频遗漏点
-                </Text>
-                <ul style={{ marginTop: 8, paddingLeft: 18, color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.7 }}>
-                  {state.weak_points.slice(0, 10).map((p, i) => (
-                    <li key={i}>{p}</li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
-          <Divider />
-          <Button
-            icon={<RotateCcw size={16} />}
-            onClick={() => {
-              setPhase('config');
-              setState(null);
-              setAnswer('');
-            }}
-          >
-            重新开始
-          </Button>
-        </Card>
+          <div style={{ padding: 16 }}>
+            <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink, #1C1A17)' }}>
+              <ReactMarkdown>{state.summary.raw}</ReactMarkdown>
+            </div>
+            {state.weak_points && state.weak_points.length > 0 && (
+              <>
+                <Divider style={{ borderColor: 'rgba(28,26,23,0.15)' }} />
+                <div>
+                  <Text strong style={{ fontSize: 13, color: 'var(--brand, #DE5126)' }}>
+                    高频遗漏点
+                  </Text>
+                  <ul style={{ marginTop: 8, paddingLeft: 18, color: 'var(--ink-secondary, #6B645A)', fontSize: 13, lineHeight: 1.7 }}>
+                    {state.weak_points.slice(0, 10).map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+            <Divider style={{ borderColor: 'rgba(28,26,23,0.15)' }} />
+            <Button
+              className="op-btn"
+              icon={<RotateCcw size={16} />}
+              onClick={() => {
+                setPhase('config');
+                setState(null);
+                setAnswer('');
+              }}
+            >
+              重新开始
+            </Button>
+          </div>
+        </div>
       )}
+
+      <style jsx>{`
+        .ep-root {
+          color: var(--ink, #1C1A17);
+        }
+        .op-card {
+          background: var(--bg-panel, #FFFDF8);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-card:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+        }
+        .op-card-header {
+          padding: 14px 16px;
+          border-bottom: 1px solid rgba(28, 26, 23, 0.15);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--ink, #1C1A17);
+        }
+        .op-tag {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+        }
+        .op-tag-sunken {
+          display: inline-flex;
+          align-items: center;
+          height: 22px;
+          padding: 0 8px;
+          background: var(--bg-sunken, #F5EDDF);
+          color: var(--ink, #1C1A17);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .op-hint-box {
+          padding: 12px;
+          background: var(--bg-sunken, #F5EDDF);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+        }
+        .op-textarea {
+          width: 100%;
+          padding: 12px;
+          background: var(--bg-sunken, #F5EDDF);
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 14px;
+          line-height: 1.6;
+          resize: none;
+          outline: none;
+          color: var(--ink, #1C1A17);
+          transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-textarea:focus {
+          border-color: var(--brand, #DE5126);
+          outline: 2px solid var(--brand, #DE5126);
+          outline-offset: 2px;
+        }
+        .op-textarea::placeholder {
+          color: var(--ink-faint, #A39A8C);
+        }
+        .op-btn {
+          border-radius: 3px;
+          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--bg-panel, #FFFDF8);
+          color: var(--ink, #1C1A17);
+          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
+            color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .op-btn:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+        }
+        .op-btn:active {
+          transform: translate(0, 0);
+          box-shadow: none;
+        }
+        .op-btn-primary {
+          background: var(--brand, #DE5126);
+          border-color: var(--ink, #1C1A17);
+          color: #fff;
+        }
+        .op-btn-primary:hover {
+          background: var(--brand-hover, #C4431B);
+        }
+        .op-btn-primary:disabled {
+          background: var(--bg-sunken, #F5EDDF);
+          color: var(--ink-faint, #A39A8C);
+          border-color: var(--ink-faint, #A39A8C);
+        }
+        .op-btn-danger {
+          color: var(--brand, #DE5126);
+          border-color: var(--brand, #DE5126);
+        }
+        .op-btn-danger:hover {
+          background: var(--brand-soft, #FBE9E0);
+        }
+        .op-point {
+          padding: 8px 10px;
+          border: 1.5px solid var(--ink, #1C1A17);
+          border-radius: 3px;
+          font-size: 12px;
+          background: var(--bg-panel, #FFFDF8);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .op-card, .op-btn, .op-textarea {
+            transition: opacity 100ms ease;
+          }
+        }
+      `}</style>
     </div>
   );
 }

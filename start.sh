@@ -5,6 +5,10 @@ set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
+# Mac 上 faiss-cpu 的 Intel OpenMP 与 torch/sentence-transformers 多线程冲突，
+# 限制为单线程可避免 Segmentation fault。Windows 上无副作用。
+export OMP_NUM_THREADS=1
+
 echo ""
 echo "╔══════════════════════════════════════╗"
 echo "║   DX-RAG 知识库问答系统 v1.0        ║"
@@ -23,13 +27,20 @@ echo "  .env ✓"
 
 # ---- 2. 后端虚拟环境 & 依赖 ----
 echo "[2/5] 检查后端依赖..."
-PYTHON=""
-for py in python3 python; do
-    if command -v $py &>/dev/null; then
-        PYTHON=$py
-        break
-    fi
-done
+# 优先使用项目内的虚拟环境（Mac 临时开发机已重建）
+if [ -x "$DIR/backend/venv_new/bin/python" ]; then
+    PYTHON="$DIR/backend/venv_new/bin/python"
+elif [ -x "$DIR/backend/venv/bin/python" ]; then
+    PYTHON="$DIR/backend/venv/bin/python"
+else
+    PYTHON=""
+    for py in python3 python; do
+        if command -v $py &>/dev/null; then
+            PYTHON=$py
+            break
+        fi
+    done
+fi
 if [ -z "$PYTHON" ]; then
     echo "  ✗ 未找到 Python，请安装 Python 3.10+"
     exit 1

@@ -40,7 +40,7 @@ def create_app() -> FastAPI:
         settings.ensure_dirs()
         print(f"[Startup] 应用启动: {settings.app_name}")
         print(f"[Startup] 上传目录: {settings.upload_dir}")
-        print(f"[Startup] 向量数据库: {settings.chroma_persist_dir}")
+        print(f"[Startup] 向量数据库: {settings.vector_persist_dir}")
 
     return app
 
