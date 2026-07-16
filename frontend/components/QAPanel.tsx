@@ -323,6 +323,7 @@ function CitationText({
   activeId,
   pinnedId,
   hoveredCiteIndex,
+  pulsingCitationIdx,
   onDropReplace,
   citationOverrides,
   onRegisterCitation,
@@ -337,6 +338,7 @@ function CitationText({
   activeId?: string;
   pinnedId?: string;
   hoveredCiteIndex: number | null;
+  pulsingCitationIdx: number | null;
   onDropReplace?: (fromSourceId: string, toCitationNum: number) => void;
   citationOverrides?: Record<number, string>;
   onRegisterCitation: (msgIdx: number, globalIdx: number, el: HTMLSpanElement) => void;
@@ -370,7 +372,8 @@ function CitationText({
         const isActive = sourceId === activeId;
         const isPinned = sourceId === pinnedId;
         const isHovered = hoveredCiteIndex !== null && hoveredCiteIndex === globalIdx;
-        const className = `qa-citation ${isActive ? 'qa-citation-active' : ''} ${isPinned ? 'qa-citation-pinned' : ''} ${isHovered ? 'qa-citation-hovered' : ''}`;
+        const isPulsing = pulsingCitationIdx !== null && pulsingCitationIdx === globalIdx;
+        const className = `qa-citation ${isActive ? 'qa-citation-active' : ''} ${isPinned ? 'qa-citation-pinned' : ''} ${isHovered ? 'qa-citation-hovered' : ''} ${isPulsing ? 'qa-citation-pulse' : ''}`;
 
         return (
           <CitationSpan
@@ -471,11 +474,7 @@ function CitationSpan({
   );
 }
 
-const SOURCE_FILTER_OPTIONS = [
-  { value: 'all', label: '全部' },
-  { value: 'current_kb', label: '仅当前知识库' },
-  { value: 'selected_files', label: '仅选中文件' },
-];
+
 
 function SourcePanel({
   sources,
@@ -484,6 +483,8 @@ function SourcePanel({
   pinnedId,
   hoveredCiteIndex,
   pulsingSourceId,
+  filterFile,
+  onFilterChange,
   onActivate,
   onPin,
   onRef,
@@ -497,6 +498,8 @@ function SourcePanel({
   pinnedId?: string;
   hoveredCiteIndex: number | null;
   pulsingSourceId: string | null;
+  filterFile: string;
+  onFilterChange: (file: string) => void;
   onActivate: (id: string | undefined, globalIdx?: number) => void;
   onPin: (id: string | undefined) => void;
   onRef: (id: string, el: HTMLDivElement | null) => void;
@@ -505,7 +508,16 @@ function SourcePanel({
   onToggle: () => void;
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [filterValue, setFilterValue] = useState<'all' | 'current_kb' | 'selected_files'>('all');
+
+  const visibleClusters = filterFile === 'all'
+    ? clusters
+    : clusters.filter((c) => c.label === filterFile);
+  const visibleCount = visibleClusters.reduce((sum, c) => sum + c.sources.length, 0);
+
+  const filterOptions = [
+    { value: 'all', label: '全部' },
+    ...clusters.map((c) => ({ value: c.label, label: c.label })),
+  ];
 
   if (panelCollapsed) {
     return (
@@ -526,21 +538,21 @@ function SourcePanel({
       <div className="qa-panel-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap' }}>检索结果</span>
-          <Tooltip title="按来源范围过滤下方片段">
+          <Tooltip title="按来源文件过滤下方片段">
             <QuestionCircleOutlined style={{ color: 'var(--ink-faint)', fontSize: 12 }} />
           </Tooltip>
           <Select
-            value={filterValue}
-            onChange={(val) => setFilterValue(val)}
-            options={SOURCE_FILTER_OPTIONS}
+            value={filterFile}
+            onChange={(val) => onFilterChange(val)}
+            options={filterOptions}
             size="small"
             className="qa-source-filter"
-            popupClassName="qa-source-filter-dropdown"
+            classNames={{ popup: { root: 'qa-source-filter-dropdown' } }}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
-            共 {sources.length} 条
+            共 {visibleCount} 条
           </span>
           <button
             className="qa-panel-toggle"
@@ -552,7 +564,12 @@ function SourcePanel({
         </div>
       </div>
       <div className="qa-scroll">
-        {clusters.map((cluster) => {
+        {visibleClusters.length === 0 && (
+          <Text style={{ color: 'var(--ink-faint)', fontSize: 12, padding: 12, lineHeight: 1.6 }}>
+            没有匹配当前筛选条件的检索片段
+          </Text>
+        )}
+        {visibleClusters.map((cluster) => {
           const isCollapsed = collapsed[cluster.key];
           return (
             <div key={cluster.key} className="qa-cluster">
@@ -596,8 +613,12 @@ function SourcePanel({
                           }}
                           onMouseEnter={() => onActivate(src.id, globalIdx)}
                           onMouseLeave={() => onActivate(undefined)}
-                          onClick={() => onPin(isPinned ? undefined : src.id)}
-                          title={isPinned ? '点击取消固定' : '点击固定引用，便于查看长片段'}
+                          onClick={() => {
+                            const willPin = !isPinned;
+                            onPin(willPin ? src.id : undefined);
+                            if (willPin) onSourceBadgeClick(globalIdx);
+                          }}
+                          title={isPinned ? '点击取消固定' : '点击固定引用并跳转到答案中的对应引用'}
                           style={{
                             ...(isActive || isHovered ? { background: colorWithOpacity(getCiteColorVar(globalIdx), 0.08) } : {}),
                             ...(pulsingSourceId === src.id ? { '--pulse-color': colorWithOpacity(getCiteColorVar(globalIdx), 0.08) } as React.CSSProperties : {}),
@@ -653,6 +674,7 @@ export default function QAPanel({
   const [pinnedCitationId, setPinnedCitationId] = useState<string | undefined>();
   const [hoveredCiteIndex, setHoveredCiteIndex] = useState<number | null>(null);
   const [pulsingSourceId, setPulsingSourceId] = useState<string | null>(null);
+  const [pulsingCitationIdx, setPulsingCitationIdx] = useState<number | null>(null);
   const [citationOverrides, setCitationOverrides] = useState<Record<number, Record<number, string>>>({});
   const [feedbackMsgIdx, setFeedbackMsgIdx] = useState<number | null>(null);
   const [feedbackType, setFeedbackType] = useState<'replace' | 'inaccurate' | null>(null);
@@ -660,7 +682,7 @@ export default function QAPanel({
   const [replaceCitationNum, setReplaceCitationNum] = useState<number | null>(null);
   const [replaceTargetId, setReplaceTargetId] = useState('');
   const [retrievalCollapsed, setRetrievalCollapsed] = useState(false);
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'current_kb' | 'selected_files'>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [flagProblemType, setFlagProblemType] = useState<string | null>(null);
   const [flagSubmitting, setFlagSubmitting] = useState(false);
   const [flagSubmitted, setFlagSubmitted] = useState(false);
@@ -729,6 +751,18 @@ export default function QAPanel({
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [activeCitationId]);
+
+  // 固定某条引用后，给答案区对应角标一个脉冲提示
+  useEffect(() => {
+    if (!pinnedCitationId) return;
+    const lastAssistant = messages[messages.length - 1];
+    if (lastAssistant?.role !== 'assistant' || !lastAssistant.sources) return;
+    const idx = getGlobalSourceIndex(pinnedCitationId, lastAssistant.sources);
+    if (idx <= 0) return;
+    setPulsingCitationIdx(idx);
+    const t = setTimeout(() => setPulsingCitationIdx(null), 600);
+    return () => clearTimeout(t);
+  }, [pinnedCitationId, messages]);
 
   // Close pinned popup on Esc or click outside
   useEffect(() => {
@@ -844,6 +878,7 @@ export default function QAPanel({
     setActiveCitationId(undefined);
     setCitationOverrides({});
     setHoveredCiteIndex(null);
+    setSourceFilter('all');
     closePopup();
 
     try {
@@ -1505,16 +1540,21 @@ export default function QAPanel({
           transform: translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
         }
-        .qa-citation-active {
-          outline: 2px solid var(--brand);
-          outline-offset: 1px;
-        }
+        .qa-citation-active,
         .qa-citation-pinned {
-          outline: 2px solid var(--brand);
-          outline-offset: 1px;
+          box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 4px var(--brand);
+          outline: none;
         }
         .qa-citation-hovered {
-          box-shadow: 0 0 0 2px var(--ink);
+          box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 4px var(--ink);
+          outline: none;
+        }
+        .qa-citation-pulse {
+          animation: qa-citation-pulse-anim 600ms ease-in-out;
+        }
+        @keyframes qa-citation-pulse-anim {
+          0%, 100% { box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 4px var(--brand); }
+          50% { box-shadow: 0 0 0 4px var(--bg-panel), 0 0 0 8px var(--brand); }
         }
 
         /* Citation popup */
@@ -1990,16 +2030,16 @@ export default function QAPanel({
                         <div className="qa-panel-header">
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap' }}>检索结果</span>
-                            <Tooltip title="按来源范围过滤下方片段">
+                            <Tooltip title="按来源文件过滤下方片段">
                               <QuestionCircleOutlined style={{ color: 'var(--ink-faint)', fontSize: 12 }} />
                             </Tooltip>
                             <Select
-                              value={sourceFilter}
-                              onChange={(val) => setSourceFilter(val)}
-                              options={SOURCE_FILTER_OPTIONS}
+                              value="all"
+                              disabled
+                              options={[{ value: 'all', label: '全部' }]}
                               size="small"
                               className="qa-source-filter"
-                              popupClassName="qa-source-filter-dropdown"
+                              classNames={{ popup: { root: 'qa-source-filter-dropdown' } }}
                             />
                           </div>
                           <button
@@ -2031,6 +2071,8 @@ export default function QAPanel({
                   pinnedId={pinnedCitationId}
                   hoveredCiteIndex={hoveredCiteIndex}
                   pulsingSourceId={pulsingSourceId}
+                  filterFile={sourceFilter}
+                  onFilterChange={setSourceFilter}
                   onActivate={(id, globalIdx) => {
                     if (id && globalIdx) {
                       setHoveredCiteIndex(globalIdx);
@@ -2153,6 +2195,7 @@ export default function QAPanel({
                                     activeId={activeCitationId}
                                     pinnedId={pinnedCitationId}
                                     hoveredCiteIndex={hoveredCiteIndex}
+                                    pulsingCitationIdx={pulsingCitationIdx}
                                     onDropReplace={isLastAssistant ? handleDropReplace : undefined}
                                     citationOverrides={citationOverrides[idx] || {}}
                                     onRegisterCitation={registerCitation}
