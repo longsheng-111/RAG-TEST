@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { ConfigProvider, Layout, Typography } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
@@ -95,7 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-paper)' }}>
             <div style={{
               padding: '10px 16px',
-              borderBottom: '1px solid rgba(28,26,23,0.15)',
+              borderBottom: '1px solid var(--border)',
               background: 'var(--bg-panel)',
               display: 'flex',
               justifyContent: 'space-between',
@@ -136,11 +135,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ) : (
                 <div className="empty-state">
                   <div className="empty-state-icon">
-                    <InboxOutlined />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 19l7-7 3 3-7 7h-3v-3z" />
+                      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                      <path d="M2 2l7 7" />
+                      <path d="M15 5l4 4" />
+                    </svg>
                   </div>
-                  <span className="empty-state-title">选择一个会话开始</span>
+                  <span className="empty-state-title">先选一个存档</span>
                   <span className="empty-state-desc">
-                    在左侧面板新建或选择会话，开始知识库问答
+                    在左侧新建或选择会话，向作业本里的讲解员提问
                   </span>
                 </div>
               )}
@@ -181,23 +185,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="zh-CN">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Press+Start+2P&family=JetBrains+Mono&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <ConfigProvider
             locale={zhCN}
             theme={{
               token: {
-                colorPrimary: '#DE5126',
-                colorText: '#1C1A17',
-                colorBgLayout: '#FFF6EC',
-                colorBgContainer: '#FFFDF8',
-                colorBorder: '#1C1A17',
-                colorBorderSecondary: 'rgba(28,26,23,0.15)',
+                colorPrimary: '#C8392B',
+                colorText: '#2B2419',
+                colorBgLayout: '#F7EDD8',
+                colorBgContainer: '#FFFBF0',
+                colorBorder: '#2B2419',
+                colorBorderSecondary: 'rgba(43,36,25,0.15)',
                 borderRadius: 3,
                 fontSize: 14,
-                fontFamily: '-apple-system, "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif',
-                boxShadow: '3px 3px 0 #1C1A17',
-                boxShadowSecondary: '3px 3px 0 rgba(28,26,23,0.25)',
+                boxShadow: '3px 3px 0 #2B2419',
+                boxShadowSecondary: '3px 3px 0 rgba(43,36,25,0.25)',
               },
               components: {
                 Button: { borderRadius: 3, primaryShadow: 'none' },

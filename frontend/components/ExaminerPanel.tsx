@@ -64,17 +64,21 @@ interface Props {
 
 const MAX_QUESTIONS = 5;
 
+const CHALK = '#F0EDE4';
+const CHALK_BRIGHT = '#FFFBF0';
+const BOARD = '#2E4A3D';
+
 function scoreColor(score: number) {
   if (score >= 7) return 'var(--cite-3, #7CB518)';
   if (score >= 5) return 'var(--cite-4, #E5A50A)';
-  return 'var(--brand, #DE5126)';
+  return 'var(--brand, #C8392B)';
 }
 
 function ReferencePointsCard({ points }: { points: string[] }) {
   return (
     <div className="op-hint-box" style={{ marginBottom: 12 }}>
-      <Text strong style={{ fontSize: 12, color: 'var(--ink, #1C1A17)' }}>参考答案要点</Text>
-      <ol style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--ink-secondary, #6B645A)', lineHeight: 1.7 }}>
+      <Text strong style={{ fontSize: 12, color: CHALK_BRIGHT }}>参考答案要点</Text>
+      <ol style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, color: CHALK, lineHeight: 1.7 }}>
         {points.map((p, i) => (
           <li key={i}>{p}</li>
         ))}
@@ -88,7 +92,7 @@ function PointsResultCard({ points }: { points?: ExamPoint[] }) {
   const hitCount = points.filter((p) => p.hit).length;
   return (
     <div style={{ marginTop: 12 }}>
-      <Text strong style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}>
+      <Text strong style={{ fontSize: 12, color: CHALK_BRIGHT }}>
         要点命中 {hitCount} / {points.length}
       </Text>
       <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -97,22 +101,22 @@ function PointsResultCard({ points }: { points?: ExamPoint[] }) {
             key={i}
             className="op-point"
             style={{
-              borderColor: p.hit ? 'var(--cite-3, #7CB518)' : 'var(--brand, #DE5126)',
+              borderColor: p.hit ? 'var(--cite-3, #7CB518)' : 'var(--brand, #C8392B)',
             }}
           >
             <Space size={6}>
               {p.hit ? (
                 <CheckCircle2 size={14} color="var(--cite-3, #7CB518)" />
               ) : (
-                <AlertTriangle size={14} color="var(--brand, #DE5126)" />
+                <AlertTriangle size={14} color="var(--brand, #C8392B)" />
               )}
-              <Text style={{ color: 'var(--ink, #1C1A17)', fontWeight: 500 }}>
+              <Text style={{ color: CHALK_BRIGHT, fontWeight: 500 }}>
                 {p.hit ? '命中' : '未命中'}
               </Text>
             </Space>
-            <div style={{ marginTop: 4, color: 'var(--ink-secondary, #6B645A)' }}>{p.point}</div>
+            <div style={{ marginTop: 4, color: CHALK }}>{p.point}</div>
             {p.evidence && (
-              <div style={{ marginTop: 4, color: 'var(--ink-faint, #A39A8C)', fontSize: 11 }}>
+              <div style={{ marginTop: 4, color: 'rgba(240,237,228,0.65)', fontSize: 11 }}>
                 依据：{p.evidence}
               </div>
             )}
@@ -208,18 +212,18 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   if (phase === 'config') {
     return (
-      <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px' }}>
+      <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
         <div className="op-card">
-          <div className="op-card-header">
+          <div className="op-card-header ep-config-header">
             <Space>
-              <GraduationCap size={20} color="var(--brand, #DE5126)" />
+              <GraduationCap size={20} color="var(--brand, #C8392B)" />
               <span>配置模拟面试</span>
             </Space>
           </div>
           <div style={{ padding: 24 }}>
             <Space direction="vertical" size={20} style={{ width: '100%' }}>
               <div>
-                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>目标岗位</Text>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: CHALK_BRIGHT }}>目标岗位</Text>
                 <Input
                   className="op-input"
                   placeholder="例如：后端开发工程师"
@@ -229,7 +233,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 />
               </div>
               <div>
-                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>面试方向</Text>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: CHALK_BRIGHT }}>面试方向</Text>
                 <Input
                   className="op-input"
                   placeholder="例如：Java 并发 / Redis / Vue 响应式"
@@ -239,13 +243,14 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 />
               </div>
               <div>
-                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: 'var(--ink, #1C1A17)' }}>题目数量</Text>
+                <Text style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: CHALK_BRIGHT }}>题目数量</Text>
                 <Segmented
+                  className="ep-segmented"
                   value={MAX_QUESTIONS}
                   options={[{ label: `${MAX_QUESTIONS} 题`, value: MAX_QUESTIONS }]}
                   disabled
                 />
-                <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--ink-faint, #A39A8C)' }}>
+                <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'rgba(240,237,228,0.65)' }}>
                   默认 5 题，由浅入深；单题最多追问 2 次
                 </Text>
               </div>
@@ -266,63 +271,126 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
         <style jsx>{`
           .ep-root {
-            color: var(--ink, #1C1A17);
+            --ep-board: var(--board, ${BOARD});
+            --ep-chalk: ${CHALK};
+            --ep-chalk-bright: ${CHALK_BRIGHT};
+            --ep-chalk-faint: rgba(240, 237, 228, 0.55);
+            --ep-chalk-weak: rgba(240, 237, 228, 0.12);
+            color: var(--ep-chalk);
+            background: var(--ep-board);
+          }
+          .ep-config-header {
+            font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive, sans-serif;
+            font-size: 18px;
+            letter-spacing: 0.5px;
           }
           .op-card {
-            background: var(--bg-panel, #FFFDF8);
-            border: 1.5px solid var(--ink, #1C1A17);
+            background: var(--ep-board);
+            border: 1.5px solid var(--ep-chalk-bright);
             border-radius: 3px;
+            background-image:
+              repeating-linear-gradient(0deg, var(--ep-chalk-weak) 0 1px, transparent 1px 24px),
+              repeating-linear-gradient(90deg, var(--ep-chalk-weak) 0 1px, transparent 1px 24px);
           }
           .op-card-header {
             padding: 14px 24px;
-            border-bottom: 1px solid rgba(28, 26, 23, 0.15);
+            border-bottom: 1px solid var(--ep-chalk-weak);
             font-size: 15px;
             font-weight: 600;
-            color: var(--ink, #1C1A17);
+            color: var(--ep-chalk-bright);
           }
           .op-input {
-            border: 1.5px solid var(--ink, #1C1A17);
-            border-radius: 3px;
-            background: var(--bg-panel, #FFFDF8);
+            border: 1.5px solid var(--ep-chalk-bright) !important;
+            border-radius: 3px !important;
+            background: var(--ep-board) !important;
+            color: var(--ep-chalk-bright) !important;
             transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
               box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
           }
+          .op-input::placeholder {
+            color: var(--ep-chalk-faint) !important;
+          }
           .op-input:focus {
-            border-color: var(--brand, #DE5126);
-            outline: 2px solid var(--brand, #DE5126);
+            border-color: var(--brand, #C8392B) !important;
+            outline: 2px solid var(--brand, #C8392B);
             outline-offset: 2px;
+          }
+          .ep-root :global(.ant-input) {
+            background: var(--ep-board) !important;
+            border-color: var(--ep-chalk-bright) !important;
+            color: var(--ep-chalk-bright) !important;
+          }
+          .ep-root :global(.ant-input::placeholder) {
+            color: var(--ep-chalk-faint) !important;
+          }
+          .ep-root :global(.ant-input:hover) {
+            border-color: var(--ep-chalk-bright) !important;
+          }
+          .ep-root :global(.ant-input:focus) {
+            border-color: var(--brand, #C8392B) !important;
+            outline: 2px solid var(--brand, #C8392B);
+            outline-offset: 2px;
+            box-shadow: none !important;
+          }
+          .ep-segmented :global(.ant-segmented) {
+            background: rgba(240, 237, 228, 0.12) !important;
+          }
+          .ep-segmented :global(.ant-segmented-item) {
+            color: var(--ep-chalk-faint) !important;
+          }
+          .ep-segmented :global(.ant-segmented-item-selected) {
+            background: var(--ep-board) !important;
+            color: var(--ep-chalk-bright) !important;
+            border: 1.5px solid var(--ep-chalk-bright) !important;
           }
           .op-btn {
             border-radius: 3px;
-            border: 1.5px solid var(--ink, #1C1A17);
-            background: var(--bg-panel, #FFFDF8);
-            color: var(--ink, #1C1A17);
+            border: 1.5px solid var(--ep-chalk-bright);
+            background: var(--ep-board);
+            color: var(--ep-chalk-bright);
             transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
               box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
               border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
               background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
               color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
           }
+          .ep-root :global(.ant-btn).op-btn {
+            background: var(--ep-board) !important;
+            border-color: var(--ep-chalk-bright) !important;
+            color: var(--ep-chalk-bright) !important;
+          }
           .op-btn:hover {
             transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+            box-shadow: 3px 3px 0 var(--ep-chalk-bright);
+            background: rgba(240, 237, 228, 0.08);
           }
           .op-btn:active {
-            transform: translate(0, 0);
+            transform: translate(2px, 2px);
             box-shadow: none;
+            transition: none;
           }
           .op-btn-primary {
-            background: var(--brand, #DE5126);
-            border-color: var(--ink, #1C1A17);
+            background: var(--brand, #C8392B);
+            border-color: var(--ep-chalk-bright);
             color: #fff;
           }
+          .ep-root :global(.ant-btn).op-btn-primary {
+            background: var(--brand, #C8392B) !important;
+            border-color: var(--ep-chalk-bright) !important;
+            color: #fff !important;
+          }
           .op-btn-primary:hover {
-            background: var(--brand-hover, #C4431B);
+            background: var(--brand-hover, #A92E22);
           }
           .op-btn-primary:disabled {
-            background: var(--bg-sunken, #F5EDDF);
-            color: var(--ink-faint, #A39A8C);
-            border-color: var(--ink-faint, #A39A8C);
+            background: rgba(240, 237, 228, 0.12);
+            color: var(--ep-chalk-faint);
+            border-color: var(--ep-chalk-faint);
+          }
+          .ep-root :global(.ant-btn).op-btn-primary:disabled {
+            background: rgba(240, 237, 228, 0.12) !important;
+            color: var(--ep-chalk-faint) !important;
+            border-color: var(--ep-chalk-faint) !important;
           }
           @media (prefers-reduced-motion: reduce) {
             .op-card, .op-input, .op-btn {
@@ -337,16 +405,16 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   if (!state) return <Spin style={{ margin: '40px auto', display: 'block' }} />;
 
   return (
-    <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
+    <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
       <div className="op-card" style={{ marginBottom: 16, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <Space size={16}>
-            <Target size={24} color="var(--brand, #DE5126)" />
+            <Target size={24} color="var(--brand, #C8392B)" />
             <div>
-              <Title level={5} style={{ margin: 0, fontSize: 16, color: 'var(--ink, #1C1A17)' }}>
+              <Title level={5} style={{ margin: 0, fontSize: 16, color: CHALK_BRIGHT }}>
                 模拟面试 · {state.question_index} / {MAX_QUESTIONS} 题
               </Title>
-              <Text type="secondary" style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}>
+              <Text type="secondary" style={{ fontSize: 12, color: CHALK }}>
                 {state.status === 'follow_up' ? '追问环节' : '正式题目'}
                 {state.follow_up_count > 0 && ` · 已追问 ${state.follow_up_count} 次`}
               </Text>
@@ -354,21 +422,27 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           </Space>
           <Space size={24} align="center">
             <div style={{ textAlign: 'right' }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', color: 'var(--ink-secondary, #6B645A)' }}>当前均分</Text>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', color: CHALK }}>当前均分</Text>
               <Text strong style={{ fontSize: 20, color: scoreColor(avgScore), fontVariantNumeric: 'tabular-nums' }}>
                 {avgScore.toFixed(1)}
               </Text>
-              <Text type="secondary" style={{ fontSize: 12, color: 'var(--ink-secondary, #6B645A)' }}> / 10</Text>
+              <Text type="secondary" style={{ fontSize: 12, color: CHALK }}> / 10</Text>
             </div>
             <div style={{ width: 160 }}>
-              <Progress percent={progressPercent} size="small" strokeColor="var(--brand, #DE5126)" trailColor="var(--bg-sunken, #F5EDDF)" />
+              <Progress
+                className="ep-progress"
+                percent={progressPercent}
+                size="small"
+                strokeColor="var(--brand, #C8392B)"
+                trailColor="rgba(240,237,228,0.15)"
+              />
             </div>
           </Space>
         </div>
       </div>
 
       <div className="op-card" style={{ marginBottom: 16, padding: 16 }}>
-        <div style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink, #1C1A17)' }}>
+        <div className="ep-question">
           <ReactMarkdown>{state.current_question}</ReactMarkdown>
         </div>
         <Space size={8} wrap style={{ marginTop: 14 }}>
@@ -428,7 +502,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           <div className="op-card-header">
             <Space>
               {state.cheating_detected ? (
-                <AlertTriangle size={18} color="var(--brand, #DE5126)" />
+                <AlertTriangle size={18} color="var(--brand, #C8392B)" />
               ) : (
                 <CheckCircle2 size={18} color={scoreColor(state.evaluation.score)} />
               )}
@@ -436,7 +510,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
               <span
                 className="op-tag"
                 style={{
-                  background: 'var(--bg-sunken, #F5EDDF)',
+                  background: 'var(--board, #2E4A3D)',
                   color: scoreColor(state.evaluation.score),
                 }}
               >
@@ -447,20 +521,21 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           <div style={{ padding: 16 }}>
             {state.cheating_detected && (
               <Alert
+                className="ep-alert"
                 message="反作弊提示"
                 description="系统检测到您的回答与参考资料或历史回答高度重合。模拟面试要求独立作答。"
                 type="warning"
                 showIcon
                 style={{
                   marginBottom: 12,
-                  background: 'var(--brand-soft, #FBE9E0)',
-                  border: '1.5px solid var(--ink, #1C1A17)',
+                  background: 'rgba(200,57,43,0.12)',
+                  border: '1.5px solid var(--ep-chalk-bright)',
                   borderRadius: 3,
                   boxShadow: 'none',
                 }}
               />
             )}
-            <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink, #1C1A17)' }}>
+            <div className="markdown-body" style={{ fontSize: 14, color: CHALK }}>
               <ReactMarkdown>{state.evaluation.raw}</ReactMarkdown>
             </div>
             <PointsResultCard points={state.evaluation.points} />
@@ -474,23 +549,23 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
             <Space>
               <Flag size={18} color="var(--cite-3, #7CB518)" />
               <span>面试总结</span>
-              <span className="op-tag" style={{ background: 'var(--bg-sunken, #F5EDDF)', color: 'var(--cite-3, #7CB518)' }}>
+              <span className="op-tag" style={{ background: 'var(--board, #2E4A3D)', color: 'var(--cite-3, #7CB518)' }}>
                 总体 {state.summary.total_score} / 100 分
               </span>
             </Space>
           </div>
           <div style={{ padding: 16 }}>
-            <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink, #1C1A17)' }}>
+            <div className="markdown-body" style={{ fontSize: 14, color: CHALK }}>
               <ReactMarkdown>{state.summary.raw}</ReactMarkdown>
             </div>
             {state.weak_points && state.weak_points.length > 0 && (
               <>
-                <Divider style={{ borderColor: 'rgba(28,26,23,0.15)' }} />
+                <Divider style={{ borderColor: 'rgba(240,237,228,0.2)' }} />
                 <div>
-                  <Text strong style={{ fontSize: 13, color: 'var(--brand, #DE5126)' }}>
+                  <Text strong style={{ fontSize: 13, color: 'var(--brand, #C8392B)' }}>
                     高频遗漏点
                   </Text>
-                  <ul style={{ marginTop: 8, paddingLeft: 18, color: 'var(--ink-secondary, #6B645A)', fontSize: 13, lineHeight: 1.7 }}>
+                  <ul style={{ marginTop: 8, paddingLeft: 18, color: CHALK, fontSize: 13, lineHeight: 1.7 }}>
                     {state.weak_points.slice(0, 10).map((p, i) => (
                       <li key={i}>{p}</li>
                     ))}
@@ -498,7 +573,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 </div>
               </>
             )}
-            <Divider style={{ borderColor: 'rgba(28,26,23,0.15)' }} />
+            <Divider style={{ borderColor: 'rgba(240,237,228,0.2)' }} />
             <Button
               className="op-btn"
               icon={<RotateCcw size={16} />}
@@ -516,32 +591,47 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
       <style jsx>{`
         .ep-root {
-          color: var(--ink, #1C1A17);
+          --ep-board: var(--board, ${BOARD});
+          --ep-chalk: ${CHALK};
+          --ep-chalk-bright: ${CHALK_BRIGHT};
+          --ep-chalk-faint: rgba(240, 237, 228, 0.55);
+          --ep-chalk-weak: rgba(240, 237, 228, 0.12);
+          color: var(--ep-chalk);
+          background: var(--ep-board);
         }
         .op-card {
-          background: var(--bg-panel, #FFFDF8);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--ep-board);
+          border: 1.5px solid var(--ep-chalk-bright);
           border-radius: 3px;
+          background-image:
+            repeating-linear-gradient(0deg, var(--ep-chalk-weak) 0 1px, transparent 1px 24px),
+            repeating-linear-gradient(90deg, var(--ep-chalk-weak) 0 1px, transparent 1px 24px);
           transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .op-card:hover {
           transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          box-shadow: 3px 3px 0 var(--ep-chalk-bright);
         }
         .op-card-header {
           padding: 14px 16px;
-          border-bottom: 1px solid rgba(28, 26, 23, 0.15);
+          border-bottom: 1px solid var(--ep-chalk-weak);
           font-size: 15px;
           font-weight: 600;
-          color: var(--ink, #1C1A17);
+          color: var(--ep-chalk-bright);
         }
+        .ep-question {
+          font-size: 17px;
+          line-height: 1.7;
+          color: var(--ep-chalk-bright);
+        }
+        .ep-question p { color: var(--ep-chalk-bright); }
         .op-tag {
           display: inline-flex;
           align-items: center;
           height: 22px;
           padding: 0 8px;
-          border: 1.5px solid var(--ink, #1C1A17);
+          border: 1.5px solid var(--ep-chalk-bright);
           border-radius: 3px;
           font-size: 12px;
           font-weight: 500;
@@ -552,87 +642,171 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           align-items: center;
           height: 22px;
           padding: 0 8px;
-          background: var(--bg-sunken, #F5EDDF);
-          color: var(--ink, #1C1A17);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: rgba(240, 237, 228, 0.08);
+          color: var(--ep-chalk-bright);
+          border: 1.5px solid var(--ep-chalk-bright);
           border-radius: 3px;
           font-size: 12px;
           font-weight: 500;
         }
         .op-hint-box {
           padding: 12px;
-          background: var(--bg-sunken, #F5EDDF);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--ep-board);
+          border: 1.5px solid rgba(240, 237, 228, 0.35);
           border-radius: 3px;
         }
         .op-textarea {
           width: 100%;
           padding: 12px;
-          background: var(--bg-sunken, #F5EDDF);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--ep-board);
+          border: 1.5px solid var(--ep-chalk-bright);
           border-radius: 3px;
-          font-size: 14px;
+          font-size: 15px;
           line-height: 1.6;
           resize: none;
           outline: none;
-          color: var(--ink, #1C1A17);
+          color: var(--ep-chalk-bright);
           transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .op-textarea:focus {
-          border-color: var(--brand, #DE5126);
-          outline: 2px solid var(--brand, #DE5126);
+          border-color: var(--brand, #C8392B);
+          outline: 2px solid var(--brand, #C8392B);
           outline-offset: 2px;
         }
         .op-textarea::placeholder {
-          color: var(--ink-faint, #A39A8C);
+          color: var(--ep-chalk-faint);
         }
         .op-btn {
           border-radius: 3px;
-          border: 1.5px solid var(--ink, #1C1A17);
-          background: var(--bg-panel, #FFFDF8);
-          color: var(--ink, #1C1A17);
+          border: 1.5px solid var(--ep-chalk-bright);
+          background: var(--ep-board);
+          color: var(--ep-chalk-bright);
           transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
+        .ep-root :global(.ant-btn).op-btn {
+          background: var(--ep-board) !important;
+          border-color: var(--ep-chalk-bright) !important;
+          color: var(--ep-chalk-bright) !important;
+        }
         .op-btn:hover {
           transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          box-shadow: 3px 3px 0 var(--ep-chalk-bright);
+          background: rgba(240, 237, 228, 0.08);
         }
         .op-btn:active {
           transform: translate(0, 0);
           box-shadow: none;
         }
         .op-btn-primary {
-          background: var(--brand, #DE5126);
-          border-color: var(--ink, #1C1A17);
+          background: var(--brand, #C8392B);
+          border-color: var(--ep-chalk-bright);
           color: #fff;
         }
+        .ep-root :global(.ant-btn).op-btn-primary {
+          background: var(--brand, #C8392B) !important;
+          border-color: var(--ep-chalk-bright) !important;
+          color: #fff !important;
+        }
         .op-btn-primary:hover {
-          background: var(--brand-hover, #C4431B);
+          background: var(--brand-hover, #A92E22);
         }
         .op-btn-primary:disabled {
-          background: var(--bg-sunken, #F5EDDF);
-          color: var(--ink-faint, #A39A8C);
-          border-color: var(--ink-faint, #A39A8C);
+          background: rgba(240, 237, 228, 0.12);
+          color: var(--ep-chalk-faint);
+          border-color: var(--ep-chalk-faint);
+        }
+        .ep-root :global(.ant-btn).op-btn-primary:disabled {
+          background: rgba(240, 237, 228, 0.12) !important;
+          color: var(--ep-chalk-faint) !important;
+          border-color: var(--ep-chalk-faint) !important;
         }
         .op-btn-danger {
-          color: var(--brand, #DE5126);
-          border-color: var(--brand, #DE5126);
+          color: var(--brand, #C8392B);
+          border-color: var(--brand, #C8392B);
+        }
+        .ep-root :global(.ant-btn).op-btn-danger {
+          color: var(--brand, #C8392B) !important;
+          border-color: var(--brand, #C8392B) !important;
         }
         .op-btn-danger:hover {
-          background: var(--brand-soft, #FBE9E0);
+          background: rgba(200, 57, 43, 0.12);
+        }
+        .ep-root :global(.ant-btn).op-btn-danger:hover {
+          background: rgba(200, 57, 43, 0.12) !important;
         }
         .op-point {
           padding: 8px 10px;
-          border: 1.5px solid var(--ink, #1C1A17);
+          border: 1.5px solid var(--ep-chalk-bright);
           border-radius: 3px;
           font-size: 12px;
-          background: var(--bg-panel, #FFFDF8);
+          background: var(--ep-board);
         }
+        .ep-progress :global(.ant-progress-bg) {
+          background: var(--brand, #C8392B) !important;
+        }
+        .ep-progress :global(.ant-progress-inner) {
+          background: rgba(240, 237, 228, 0.15) !important;
+          border-radius: 3px !important;
+        }
+        .ep-progress :global(.ant-progress-bg) {
+          border-radius: 3px !important;
+          height: 8px !important;
+        }
+        .ep-alert :global(.ant-alert-message) {
+          color: var(--ep-chalk-bright) !important;
+        }
+        .ep-alert :global(.ant-alert-description) {
+          color: var(--ep-chalk) !important;
+        }
+        .ep-alert :global(.ant-alert-icon) {
+          color: var(--brand, #C8392B) !important;
+        }
+        .ep-root :global(.ant-divider) {
+          border-color: var(--ep-chalk-weak) !important;
+        }
+        .ep-root :global(.markdown-body) { color: var(--ep-chalk); }
+        .ep-root :global(.markdown-body) h1,
+        .ep-root :global(.markdown-body) h2,
+        .ep-root :global(.markdown-body) h3,
+        .ep-root :global(.markdown-body) h4,
+        .ep-root :global(.markdown-body) h5,
+        .ep-root :global(.markdown-body) h6 {
+          color: var(--ep-chalk-bright);
+        }
+        .ep-root :global(.markdown-body) p { color: var(--ep-chalk); }
+        .ep-root :global(.markdown-body) strong { color: var(--ep-chalk-bright); }
+        .ep-root :global(.markdown-body) li { color: var(--ep-chalk); }
+        .ep-root :global(.markdown-body) code {
+          background: rgba(240, 237, 228, 0.12);
+          color: var(--ep-chalk-bright);
+        }
+        .ep-root :global(.markdown-body) pre {
+          background: rgba(0, 0, 0, 0.25);
+          color: var(--ep-chalk-bright);
+        }
+        .ep-root :global(.markdown-body) pre code { background: transparent; color: inherit; }
+        .ep-root :global(.markdown-body) blockquote {
+          border-left-color: var(--brand, #C8392B);
+          background: rgba(200, 57, 43, 0.12);
+          color: var(--ep-chalk);
+        }
+        .ep-root :global(.markdown-body) table {
+          border-color: var(--ep-chalk-bright);
+        }
+        .ep-root :global(.markdown-body) th,
+        .ep-root :global(.markdown-body) td {
+          border-color: var(--ep-chalk-weak);
+        }
+        .ep-root :global(.markdown-body) th {
+          background: rgba(240, 237, 228, 0.1);
+          color: var(--ep-chalk-bright);
+        }
+        .ep-root :global(.markdown-body) td { color: var(--ep-chalk); }
         @media (prefers-reduced-motion: reduce) {
           .op-card, .op-btn, .op-textarea {
             transition: opacity 100ms ease;

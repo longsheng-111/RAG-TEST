@@ -374,12 +374,13 @@ function CitationText({
         const isHovered = hoveredCiteIndex !== null && hoveredCiteIndex === globalIdx;
         const isPulsing = pulsingCitationIdx !== null && pulsingCitationIdx === globalIdx;
         const className = `qa-citation ${isActive ? 'qa-citation-active' : ''} ${isPinned ? 'qa-citation-pinned' : ''} ${isHovered ? 'qa-citation-hovered' : ''} ${isPulsing ? 'qa-citation-pulse' : ''}`;
+        const rotation = globalIdx % 2 === 1 ? -2 : 2;
 
         return (
           <CitationSpan
             key={idx}
             className={className}
-            style={{ background: getCiteColorVar(globalIdx) }}
+            style={{ background: getCiteColorVar(globalIdx), '--citation-rotation': `${rotation}deg` } as React.CSSProperties}
             sourceId={sourceId}
             globalIdx={globalIdx}
             displayNum={displayNum}
@@ -509,14 +510,17 @@ function SourcePanel({
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  const visibleClusters = filterFile === 'all'
+  const visibleClusters = filterFile === 'all' || filterFile === 'current_kb'
     ? clusters
-    : clusters.filter((c) => c.label === filterFile);
+    : filterFile === 'selected_files'
+      ? (pinnedId ? clusters.filter((c) => c.sources.some((s) => s.id === pinnedId)) : [])
+      : clusters.filter((c) => c.label === filterFile);
   const visibleCount = visibleClusters.reduce((sum, c) => sum + c.sources.length, 0);
 
   const filterOptions = [
     { value: 'all', label: '全部' },
-    ...clusters.map((c) => ({ value: c.label, label: c.label })),
+    { value: 'current_kb', label: '仅当前知识库' },
+    { value: 'selected_files', label: '仅选中文件' },
   ];
 
   if (panelCollapsed) {
@@ -537,8 +541,8 @@ function SourcePanel({
     <div className="qa-retrieval-panel">
       <div className="qa-panel-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap' }}>检索结果</span>
-          <Tooltip title="按来源文件过滤下方片段">
+          <span className="qa-panel-title">找到的线索</span>
+          <Tooltip title="按来源范围过滤下方片段">
             <QuestionCircleOutlined style={{ color: 'var(--ink-faint)', fontSize: 12 }} />
           </Tooltip>
           <Select
@@ -551,7 +555,7 @@ function SourcePanel({
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
+          <span className="qa-panel-count">
             共 {visibleCount} 条
           </span>
           <button
@@ -686,6 +690,8 @@ export default function QAPanel({
   const [flagProblemType, setFlagProblemType] = useState<string | null>(null);
   const [flagSubmitting, setFlagSubmitting] = useState(false);
   const [flagSubmitted, setFlagSubmitted] = useState(false);
+  const [feedbackStamps, setFeedbackStamps] = useState<Record<number, boolean>>({});
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     visible: false, pinned: false, sourceId: null, citationNum: null, msgIdx: null, anchorEl: null,
   });
@@ -941,6 +947,7 @@ export default function QAPanel({
     const targetSource = msg.sources?.find((s) => s.id === replaceTargetId);
     if (!originalSource || !targetSource) return;
 
+    setReplaceSubmitting(true);
     setCitationOverrides((prev) => ({
       ...prev,
       [feedbackMsgIdx]: { ...(prev[feedbackMsgIdx] || {}), [effectiveCitationNum]: replaceTargetId },
@@ -956,9 +963,11 @@ export default function QAPanel({
         target_content: targetSource.content,
         note: '',
       });
-      message.success({ content: '引用替换已保存，后续回答将参考此反馈', duration: 2 });
+      message.success({ content: '引用已替换，后续回答将参考这条线索', duration: 2 });
     } catch (err: any) {
       message.error(err.response?.data?.detail || '保存反馈失败');
+    } finally {
+      setReplaceSubmitting(false);
     }
 
     setFeedbackType(null);
@@ -988,6 +997,7 @@ export default function QAPanel({
       });
       message.success('感谢反馈');
       setFlagSubmitted(true);
+      setFeedbackStamps((prev) => ({ ...prev, [feedbackMsgIdx]: true }));
     } catch (err: any) {
       message.error(err.response?.data?.detail || '保存反馈失败');
     } finally {
@@ -998,6 +1008,8 @@ export default function QAPanel({
   const budgetRatio = propsSessionTotal / SESSION_BUDGET;
   const isOverBudget = budgetRatio >= 1;
   const budgetColor = budgetRatio < 0.5 ? 'var(--brand)' : budgetRatio < 0.8 ? 'var(--cite-3)' : 'var(--brand)';
+  const tokenSegments = 20;
+  const usedSegments = Math.min(Math.ceil(budgetRatio * tokenSegments), tokenSegments);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); handleSend(); }
@@ -1055,7 +1067,7 @@ export default function QAPanel({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={loading}
-          placeholder="输入问题，检索并生成带引用的答案…"
+          placeholder="写下你的问题，按 Ctrl + Enter 出发"
           minRows={1}
           maxRows={8}
           style={{
@@ -1121,15 +1133,15 @@ export default function QAPanel({
     }}>
       <style>{`
         .qa-panel-root {
-          --bg-paper: #FFF6EC;
-          --bg-panel: #FFFDF8;
-          --bg-sunken: #F5EDDF;
-          --ink: #1C1A17;
-          --ink-secondary: #6B645A;
-          --ink-faint: #A39A8C;
-          --brand: #DE5126;
-          --brand-hover: #C4431B;
-          --brand-soft: #FBE9E0;
+          --bg-paper: #F7EDD8;
+          --bg-panel: #FFFBF0;
+          --bg-sunken: #F0E3C6;
+          --ink: #2B2419;
+          --ink-secondary: #6B5F4C;
+          --ink-faint: #A3937A;
+          --brand: #C8392B;
+          --brand-hover: #A92E22;
+          --brand-soft: #F6DFC8;
           --cite-1: #2F9BE8;
           --cite-2: #8B5CF6;
           --cite-3: #7CB518;
@@ -1154,6 +1166,7 @@ export default function QAPanel({
           background: var(--bg-panel);
           border: 1.5px solid var(--ink);
           border-radius: var(--radius);
+          font-family: var(--font-display);
           font-size: 12px;
           font-weight: 600;
           color: var(--ink);
@@ -1161,12 +1174,13 @@ export default function QAPanel({
           overflow: hidden;
           text-overflow: ellipsis;
           line-height: 1.5;
-          transform: rotate(-1.5deg);
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard);
+          transform: rotate(-2deg);
+          transition: transform 150ms var(--ease-pop), box-shadow 150ms var(--ease-pop);
           cursor: default;
         }
+        .qa-persona-sticker:nth-of-type(even) { transform: rotate(2deg); }
         .qa-persona-sticker:hover {
-          transform: rotate(-1.5deg) translate(-1px, -1px);
+          transform: rotate(0deg) translate(-1px, -2px);
           box-shadow: 3px 3px 0 var(--ink);
         }
         .qa-kb-select {
@@ -1175,8 +1189,33 @@ export default function QAPanel({
         .qa-kb-select .ant-select-selector {
           border-radius: var(--radius) !important;
         }
+        .qa-kb-select .ant-select-selection-item {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
         .qa-session-tokens {
           font-variant-numeric: tabular-nums;
+        }
+        .qa-token-count {
+          font-family: var(--font-pixel);
+          font-size: 10px;
+          line-height: 1;
+        }
+        .qa-token-bar {
+          display: flex;
+          gap: 2px;
+          align-items: center;
+          flex-shrink: 0;
+        }
+        .qa-token-segment {
+          width: 4px;
+          height: 10px;
+          background: var(--brand);
+          border: 1px solid var(--ink);
+        }
+        .qa-token-segment.empty {
+          background: var(--bg-sunken);
         }
         .qa-session-tokens-compact {
           display: none;
@@ -1194,6 +1233,7 @@ export default function QAPanel({
         }
         @media (max-width: 1279px) {
           .qa-token-round { display: none !important; }
+          .qa-token-bar { display: none !important; }
           .qa-token-round-only { display: inline !important; }
           .qa-token-denom { display: none; }
         }
@@ -1207,7 +1247,11 @@ export default function QAPanel({
         .qa-composer {
           margin: 0 12px 12px;
           padding: 10px 12px;
-          background: var(--bg-sunken);
+          background:
+            linear-gradient(rgba(43,36,25,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(43,36,25,0.04) 1px, transparent 1px),
+            var(--bg-panel);
+          background-size: 20px 20px, 20px 20px, 100% 100%;
           border: 1.5px solid var(--ink);
           border-radius: var(--radius);
           transition: border-color 150ms var(--ease-hard);
@@ -1217,9 +1261,14 @@ export default function QAPanel({
         }
         .qa-send-btn.ant-btn-primary {
           background: var(--brand) !important;
-          border-color: var(--brand) !important;
-          box-shadow: none !important;
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard), background 150ms var(--ease-hard) !important;
+          border: 1.5px solid var(--ink) !important;
+          border-radius: var(--radius) !important;
+          box-shadow: 2px 2px 0 var(--ink) !important;
+          color: #fff !important;
+          transition: transform 100ms var(--ease-hard), box-shadow 100ms var(--ease-hard), background 150ms var(--ease-hard) !important;
+        }
+        .qa-send-btn.ant-btn-primary svg {
+          color: #fff !important;
         }
         .qa-send-btn.ant-btn-primary:hover:not(:disabled) {
           transform: translate(-1px, -1px) !important;
@@ -1227,13 +1276,14 @@ export default function QAPanel({
           background: var(--brand-hover) !important;
         }
         .qa-send-btn.ant-btn-primary:active:not(:disabled) {
-          transform: translate(0, 0) !important;
+          transform: translate(2px, 2px) !important;
           box-shadow: none !important;
         }
         .qa-send-btn.ant-btn-primary:disabled {
           background: var(--ink-faint) !important;
           border-color: var(--ink-faint) !important;
           color: var(--bg-panel) !important;
+          box-shadow: none !important;
         }
 
         /* Empty state */
@@ -1246,6 +1296,9 @@ export default function QAPanel({
           gap: 12px;
           color: var(--ink-secondary);
           font-size: 14px;
+        }
+        .qa-empty-pencil {
+          color: var(--ink);
         }
 
         /* Loading skeleton */
@@ -1265,6 +1318,8 @@ export default function QAPanel({
         .qa-error-alert {
           border: 1.5px solid var(--ink) !important;
           background: var(--bg-panel) !important;
+          min-height: 36px;
+          padding: 6px 12px !important;
         }
         .qa-error-alert .ant-alert-message {
           color: var(--brand) !important;
@@ -1274,7 +1329,7 @@ export default function QAPanel({
         /* Retrieval panel */
         .qa-retrieval-panel {
           background: var(--bg-panel);
-          border-right: 1px solid rgba(28,26,23,0.15);
+          border-right: 1px solid rgba(43,36,25,0.12);
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -1292,9 +1347,21 @@ export default function QAPanel({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid rgba(28,26,23,0.15);
+          border-bottom: 1px solid rgba(43,36,25,0.12);
           background: var(--bg-panel);
           flex-shrink: 0;
+        }
+        .qa-panel-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--ink);
+          white-space: nowrap;
+        }
+        .qa-panel-count {
+          font-size: 11px;
+          color: var(--ink-faint);
+          font-weight: 400;
+          font-variant-numeric: tabular-nums;
         }
         .qa-panel-toggle {
           width: 24px;
@@ -1320,7 +1387,7 @@ export default function QAPanel({
         }
         .qa-source-filter .ant-select-selector {
           border-radius: var(--radius) !important;
-          border-color: rgba(28,26,23,0.25) !important;
+          border-color: rgba(43,36,25,0.25) !important;
           background: var(--bg-panel) !important;
           font-size: 12px !important;
         }
@@ -1351,7 +1418,7 @@ export default function QAPanel({
           justify-content: space-between;
           cursor: pointer;
           background: var(--bg-sunken);
-          border-bottom: 1px solid rgba(28,26,23,0.15);
+          border-bottom: 1px solid rgba(43,36,25,0.12);
         }
         .qa-cluster-title {
           display: flex;
@@ -1373,7 +1440,7 @@ export default function QAPanel({
           font-variant-numeric: tabular-nums;
           background: var(--bg-panel);
           padding: 1px 6px;
-          border: 1px solid rgba(28,26,23,0.15);
+          border: 1px solid rgba(43,36,25,0.12);
           border-radius: var(--radius);
         }
         .qa-cluster-body {
@@ -1458,7 +1525,8 @@ export default function QAPanel({
           min-width: 0;
         }
         .qa-source-score {
-          font-size: 11px;
+          font-family: var(--font-pixel);
+          font-size: 10px;
           font-weight: 600;
           font-variant-numeric: tabular-nums;
           flex-shrink: 0;
@@ -1489,6 +1557,25 @@ export default function QAPanel({
           border: 1.5px solid var(--ink);
           border-radius: var(--radius);
           margin-bottom: 16px;
+          padding: 3px;
+          overflow: hidden;
+          position: relative;
+        }
+        .qa-answer-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 12px;
+          height: 12px;
+          border-top: 3px solid var(--brand);
+          border-left: 3px solid var(--brand);
+          pointer-events: none;
+          z-index: 2;
+        }
+        .qa-answer-card-inner {
+          border: 1px solid var(--ink);
+          border-radius: var(--radius);
           overflow: hidden;
         }
         .qa-answer-toolbar {
@@ -1497,15 +1584,27 @@ export default function QAPanel({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid rgba(28,26,23,0.15);
+          border-bottom: 1px solid rgba(43,36,25,0.12);
           background: var(--bg-sunken);
+        }
+        .qa-answer-toolbar-label {
+          font-family: var(--font-display);
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--ink);
         }
         .qa-answer-body {
           padding: 16px;
           font-size: 14px;
-          line-height: 1.65;
+          line-height: 32px;
           color: var(--ink);
           position: relative;
+          background: repeating-linear-gradient(
+            transparent,
+            transparent 31px,
+            rgba(43,36,25,0.08) 31px,
+            rgba(43,36,25,0.08) 32px
+          );
         }
         .qa-user-bubble {
           max-width: 80%;
@@ -1533,11 +1632,12 @@ export default function QAPanel({
           margin: 0 1px;
           cursor: pointer;
           border: 1.5px solid var(--ink);
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard);
+          transform: rotate(var(--citation-rotation, 0deg));
+          transition: transform 200ms var(--ease-pop), box-shadow 150ms var(--ease-hard);
           user-select: none;
         }
         .qa-citation:hover {
-          transform: translate(-1px, -1px);
+          transform: rotate(0deg) translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
         }
         .qa-citation-active,
@@ -1566,13 +1666,14 @@ export default function QAPanel({
           border-radius: 3px;
           box-shadow: 4px 4px 0 var(--ink);
           pointer-events: auto;
+          overflow: hidden;
         }
         .qa-citation-popup-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 10px 12px;
-          border-bottom: 1px solid rgba(28,26,23,0.15);
+          border-bottom: 1px solid rgba(43,36,25,0.15);
           background: var(--bg-sunken);
         }
         .qa-citation-popup-badge {
@@ -1598,9 +1699,11 @@ export default function QAPanel({
           max-width: 160px;
         }
         .qa-citation-popup-score {
-          font-size: 12px;
+          font-family: var(--font-pixel);
+          font-size: 10px;
           font-weight: 600;
           font-variant-numeric: tabular-nums;
+          line-height: 1.3;
         }
         .qa-citation-popup-close {
           width: 20px;
@@ -1635,6 +1738,10 @@ export default function QAPanel({
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
+        .qa-citation-popup-pinned .qa-citation-popup-body {
+          max-height: 320px;
+          overflow-y: auto;
+        }
         .qa-citation-popup-line {
           margin-bottom: 4px;
         }
@@ -1642,13 +1749,13 @@ export default function QAPanel({
           display: flex;
           gap: 8px;
           padding: 10px 12px;
-          border-top: 1px solid rgba(28,26,23,0.15);
+          border-top: 1px solid rgba(43,36,25,0.15);
           background: var(--bg-sunken);
         }
 
         /* Reasoning timeline */
         .qa-reasoning {
-          border-bottom: 1px solid rgba(28,26,23,0.15);
+          border-bottom: 1px solid rgba(43,36,25,0.12);
           background: var(--bg-panel);
         }
         .qa-reasoning-summary {
@@ -1659,13 +1766,18 @@ export default function QAPanel({
           cursor: pointer;
           font-size: 13px;
           color: var(--ink);
+          background: var(--bg-sunken);
+          transition: background 150ms var(--ease-hard);
+        }
+        .qa-reasoning-summary:hover {
+          background: var(--bg-panel);
         }
         .qa-step-count {
           font-size: 11px;
           color: var(--ink-secondary);
-          background: var(--bg-sunken);
+          background: var(--bg-panel);
           padding: 1px 6px;
-          border: 1px solid rgba(28,26,23,0.15);
+          border: 1px solid rgba(43,36,25,0.12);
           border-radius: var(--radius);
         }
         .qa-reasoning-steps {
@@ -1716,20 +1828,23 @@ export default function QAPanel({
           height: fit-content;
           flex-shrink: 0;
           border: 1.5px solid var(--ink);
+          color: #fff;
         }
-        .qa-confidence-high { background: var(--cite-3); color: #fff; }
-        .qa-confidence-medium { background: var(--cite-4); color: #fff; }
-        .qa-confidence-low { background: var(--brand); color: #fff; }
+        .qa-confidence-high { background: var(--cite-3); }
+        .qa-confidence-medium { background: var(--cite-4); }
+        .qa-confidence-low { background: var(--brand); }
 
         /* Feedback */
         .qa-feedback {
+          position: relative;
           padding: 8px 12px;
-          border-top: 1px solid rgba(28,26,23,0.15);
+          border-top: 1px solid rgba(43,36,25,0.15);
           background: var(--bg-sunken);
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
+          overflow: visible;
         }
         .qa-feedback-note {
           font-size: 12px;
@@ -1749,8 +1864,33 @@ export default function QAPanel({
           box-shadow: 3px 3px 0 var(--ink);
         }
         .qa-feedback-btn:active {
-          transform: translate(0, 0) !important;
+          transform: translate(2px, 2px) !important;
           box-shadow: none !important;
+          transition: none !important;
+        }
+        .qa-feedback-stamp {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%) rotate(-12deg);
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          border: 2px solid var(--brand);
+          color: var(--brand);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          opacity: 0.85;
+          pointer-events: none;
+          background: rgba(200,57,43,0.06);
+          animation: qa-feedback-stamp-appear 260ms var(--ease-pop) forwards;
+        }
+        @keyframes qa-feedback-stamp-appear {
+          0% { transform: translateY(-50%) scale(1.4) rotate(-24deg); opacity: 0; }
+          100% { transform: translateY(-50%) scale(1) rotate(-12deg); opacity: 0.85; }
         }
 
         /* Modal */
@@ -1809,7 +1949,7 @@ export default function QAPanel({
           transition: background 150ms var(--ease-hard), border-color 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard);
         }
         .qa-replace-card:hover {
-          border-color: rgba(28,26,23,0.25);
+          border-color: rgba(43,36,25,0.25);
         }
         .qa-replace-card-selected {
           border-color: var(--ink) !important;
@@ -1835,10 +1975,12 @@ export default function QAPanel({
           flex: 1;
         }
         .qa-replace-card-score {
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'Press Start 2P', 'JetBrains Mono', 'SF Mono', Consolas, monospace;
           font-variant-numeric: tabular-nums;
           flex-shrink: 0;
+          line-height: 1.3;
         }
         .qa-replace-card-summary {
           font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
@@ -1877,15 +2019,26 @@ export default function QAPanel({
           font-size: 0.9em;
         }
         .qa-answer-body .markdown-body pre {
-          background: var(--bg-sunken);
-          color: var(--ink);
-          padding: 12px;
+          position: relative;
+          background: var(--ink);
+          color: var(--bg-paper);
+          padding: 36px 14px 14px;
           border-radius: var(--radius);
           overflow-x: auto;
           margin: 0.6em 0;
           font-size: 12px;
           line-height: 1.55;
           border: 1.5px solid var(--ink);
+        }
+        .qa-answer-body .markdown-body pre::before {
+          content: '';
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          width: 10px;
+          height: 10px;
+          background: var(--brand);
+          box-shadow: 16px 0 0 var(--cite-4), 32px 0 0 var(--cite-3);
         }
         .qa-answer-body .markdown-body pre code { background: transparent; color: inherit; padding: 0; }
         .qa-answer-body .markdown-body blockquote {
@@ -1903,7 +2056,7 @@ export default function QAPanel({
           border: 1.5px solid var(--ink);
         }
         .qa-answer-body .markdown-body th, .qa-answer-body .markdown-body td {
-          border: 1px solid rgba(28,26,23,0.15);
+          border: 1px solid rgba(43,36,25,0.15);
           padding: 8px 12px;
           text-align: left;
         }
@@ -1911,7 +2064,8 @@ export default function QAPanel({
 
         @media (prefers-reduced-motion: reduce) {
           .qa-panel-root, .qa-panel-root * {
-            animation-duration: 100ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
             transition-duration: 100ms !important;
           }
         }
@@ -1931,7 +2085,7 @@ export default function QAPanel({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: '0 1 auto' }}>
           <Tooltip title={personaName} placement="bottom">
-            <span className="qa-persona-sticker" data-rotation-index={0}>
+            <span className="qa-persona-sticker">
               {personaName}
             </span>
           </Tooltip>
@@ -1950,33 +2104,29 @@ export default function QAPanel({
           {lastCost && (
             <>
               <span className="qa-token-round" style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>
-                本轮 <strong style={{ color: 'var(--ink)' }}>{lastCost.total_tokens.toLocaleString()}</strong>
+                本轮 <span className="qa-token-count" style={{ color: 'var(--ink)' }}>{lastCost.total_tokens.toLocaleString()}</span>
               </span>
               <span className="qa-token-round-only">
-                <strong style={{ color: 'var(--ink)' }}>{lastCost.total_tokens.toLocaleString()}</strong>
+                <span className="qa-token-count" style={{ color: 'var(--ink)' }}>{lastCost.total_tokens.toLocaleString()}</span>
               </span>
             </>
           )}
-          <div style={{
-            width: 100,
-            height: 5,
-            background: 'rgba(28,26,23,0.12)',
-            borderRadius: 0,
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}>
-            <div style={{
-              width: `${Math.min(budgetRatio * 100, 100)}%`,
-              height: '100%',
-              background: budgetColor,
-              transition: 'width 200ms var(--ease-hard)',
-            }} />
-          </div>
+          <Tooltip title={`距离上限还差 ${Math.max(SESSION_BUDGET - propsSessionTotal, 0).toLocaleString()} tokens`}>
+            <div className="qa-token-bar">
+              {Array.from({ length: tokenSegments }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`qa-token-segment ${i < usedSegments ? '' : 'empty'}`}
+                />
+              ))}
+            </div>
+          </Tooltip>
           <span className="qa-session-tokens" style={{ fontSize: 11, color: budgetColor, fontWeight: 600, minWidth: 82, textAlign: 'right' }}>
-            {propsSessionTotal.toLocaleString()}<span className="qa-token-denom"> / {SESSION_BUDGET.toLocaleString()}</span>
+            <span className="qa-token-count">{propsSessionTotal.toLocaleString()}</span>
+            <span className="qa-token-denom"> / {SESSION_BUDGET.toLocaleString()}</span>
           </span>
           <span className="qa-session-tokens-compact" style={{ color: budgetColor }}>
-            <Database size={14} /> {propsSessionTotal.toLocaleString()}
+            <Database size={14} /> <span className="qa-token-count">{propsSessionTotal.toLocaleString()}</span>
           </span>
           <Tooltip title="清空对话">
             <Button
@@ -2004,8 +2154,13 @@ export default function QAPanel({
         {messages.length === 0 ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div className="qa-empty-state">
-              <Inbox size={32} style={{ color: 'var(--ink)' }} />
-              <span>输入问题，开始检索并生成带引用的答案</span>
+              <svg className="qa-empty-pencil" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
+                <path d="M12 19l7-7 3 3-7 7h-3v-3z" />
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                <path d="M2 2l7 7" />
+                <path d="M15 5l4 4" />
+              </svg>
+              <span>这条线索断了，换个问法试试</span>
             </div>
             {composer}
           </div>
@@ -2029,8 +2184,8 @@ export default function QAPanel({
                       <>
                         <div className="qa-panel-header">
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap' }}>检索结果</span>
-                            <Tooltip title="按来源文件过滤下方片段">
+                            <span className="qa-panel-title">找到的线索</span>
+                            <Tooltip title="按来源范围过滤下方片段">
                               <QuestionCircleOutlined style={{ color: 'var(--ink-faint)', fontSize: 12 }} />
                             </Tooltip>
                             <Select
@@ -2158,6 +2313,7 @@ export default function QAPanel({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, ease: [0.25, 0.8, 0.25, 1] }}
                       >
+                        <div className="qa-answer-card-inner">
                         {msg.reasoning_steps && msg.reasoning_steps.length > 0 && (
                           <ReasoningTimeline steps={msg.reasoning_steps} />
                         )}
@@ -2165,11 +2321,11 @@ export default function QAPanel({
                         <div className="qa-answer-toolbar">
                           <Space size={8}>
                             <Bot size={16} style={{ color: 'var(--brand)' }} />
-                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>
-                              生成答案
+                            <span className="qa-answer-toolbar-label">
+                              讲解员说
                             </span>
                             {msg.token_cost && (
-                              <Tag style={{ margin: 0, fontSize: 10, borderColor: 'rgba(28,26,23,0.15)', color: 'var(--ink-secondary)', background: 'var(--bg-sunken)' }}>
+                              <Tag style={{ margin: 0, fontSize: 10, borderColor: 'rgba(43,36,25,0.15)', color: 'var(--ink-secondary)', background: 'var(--bg-sunken)' }}>
                                 {(msg.token_cost.total_tokens / 1000).toFixed(1)}k tokens
                               </Tag>
                             )}
@@ -2219,27 +2375,39 @@ export default function QAPanel({
                               发现引用或结论有问题？
                             </span>
                             <div className="qa-feedback-actions">
-                              <Button
-                                size="small"
-                                type="text"
-                                icon={<SwapOutlined />}
-                                className="qa-feedback-btn"
-                                onClick={() => openReplaceModal(idx)}
-                              >
-                                替换引用
-                              </Button>
-                              <Button
-                                size="small"
-                                type="text"
-                                icon={<FlagOutlined />}
-                                className="qa-feedback-btn"
-                                onClick={() => openFlagModal(idx)}
-                              >
-                                标记不准确
-                              </Button>
+                              <Tooltip title="选择另一条检索片段替换当前引用">
+                                <Button
+                                  size="small"
+                                  type="text"
+                                  icon={<SwapOutlined />}
+                                  className="qa-feedback-btn"
+                                  onClick={() => openReplaceModal(idx)}
+                                  loading={replaceSubmitting}
+                                  disabled={flagSubmitting || replaceSubmitting}
+                                >
+                                  替换引用
+                                </Button>
+                              </Tooltip>
+                              <Tooltip title="反馈引用不准确或存在问题">
+                                <Button
+                                  size="small"
+                                  type="text"
+                                  icon={<FlagOutlined />}
+                                  className="qa-feedback-btn"
+                                  onClick={() => openFlagModal(idx)}
+                                  loading={flagSubmitting}
+                                  disabled={flagSubmitting || replaceSubmitting || feedbackStamps[idx]}
+                                >
+                                  标记不准确
+                                </Button>
+                              </Tooltip>
                             </div>
+                            {feedbackStamps[idx] && (
+                              <div className="qa-feedback-stamp">已反馈</div>
+                            )}
                           </div>
                         )}
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -2310,9 +2478,16 @@ export default function QAPanel({
           setFeedbackMsgIdx(null);
           setFlagProblemType(null);
           setFlagSubmitted(false);
+          setReplaceSubmitting(false);
+          setFlagSubmitting(false);
         }}
         footer={null}
-        title={feedbackType === 'replace' ? '替换引用' : '标记不准确'}
+        title={feedbackType === 'replace' ? (
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>换一条线索</div>
+            <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-secondary)', marginTop: 2 }}>从下方候选片段中选择一条替换当前引用</div>
+          </div>
+        ) : '标记不准确'}
         width={520}
       >
         {feedbackType === 'replace' && (
@@ -2377,8 +2552,8 @@ export default function QAPanel({
               })()}
             </Radio.Group>
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <Button onClick={() => { setFeedbackType(null); setFeedbackNote(''); setReplaceTargetId(''); setReplaceCitationNum(null); setFeedbackMsgIdx(null); }}>取消</Button>
-              <Button type="primary" className="qa-send-btn" icon={<Check size={14} />} onClick={confirmReplace} disabled={!replaceTargetId}>
+              <Button onClick={() => { setFeedbackType(null); setFeedbackNote(''); setReplaceTargetId(''); setReplaceCitationNum(null); setFeedbackMsgIdx(null); setReplaceSubmitting(false); }}>取消</Button>
+              <Button type="primary" className="qa-send-btn" icon={<Check size={14} />} onClick={confirmReplace} disabled={!replaceTargetId} loading={replaceSubmitting}>
                 确认替换
               </Button>
             </div>
@@ -2409,7 +2584,7 @@ export default function QAPanel({
               showCount
             />
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <Button onClick={() => { setFeedbackType(null); setFeedbackNote(''); setFlagProblemType(null); setFlagSubmitted(false); setFeedbackMsgIdx(null); }}>取消</Button>
+              <Button onClick={() => { setFeedbackType(null); setFeedbackNote(''); setFlagProblemType(null); setFlagSubmitted(false); setFeedbackMsgIdx(null); setFlagSubmitting(false); }}>取消</Button>
               <Button
                 type="primary"
                 danger

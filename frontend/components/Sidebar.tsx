@@ -19,14 +19,14 @@ interface SidebarProps {
   onMenuChange: (key: MenuKey) => void;
 }
 
-/* Warm-paper workbook palette (local fallback until global tokens land) */
-const INK = '#1C1A17';
-const INK_SECONDARY = '#6B645A';
-const PANEL = '#FFFDF8';
-const SUNKEN = '#F5EDDF';
-const BRAND = '#DE5126';
-const BRAND_SOFT = '#FBE9E0';
-const PAPER = '#FFF6EC';
+/* Retro workbook palette (local fallback until global tokens land) */
+const INK = '#2B2419';
+const INK_SECONDARY = '#6B5F4C';
+const PANEL = '#FFFBF0';
+const PAPER = '#F7EDD8';
+const SUNKEN = '#EDE1C8';
+const BRAND = '#C8392B';
+const BRAND_SOFT = '#F6DFC8';
 
 const menuItems = [
   { key: 'qa', icon: <MessageSquare size={18} />, label: '知识问答' },
@@ -73,7 +73,7 @@ export default function Sidebar({
             padding: collapsed ? 0 : '0 16px',
             justifyContent: collapsed ? 'center' : 'flex-start',
             gap: collapsed ? 0 : 12,
-            borderBottom: `1px solid ${INK}26`,
+            borderBottom: '1px solid rgba(43, 36, 25, 0.15)',
             background: PANEL,
           }}
         >
@@ -84,10 +84,11 @@ export default function Sidebar({
               height: 36,
               borderRadius: 3,
               background: BRAND,
+              border: `1.5px solid ${INK}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: PAPER,
+              color: '#fff',
               fontSize: 14,
               fontWeight: 700,
               boxShadow: 'none',
@@ -169,7 +170,7 @@ export default function Sidebar({
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 200ms cubic-bezier(0.25, 0.8, 0.25, 1)',
-              boxShadow: 'none',
+              boxShadow: `2px 2px 0 ${INK}`,
             }}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -194,8 +195,7 @@ export default function Sidebar({
           background: ${SUNKEN} !important;
           border-color: ${INK} !important;
         }
-        .dx-sidebar .ant-menu-item-selected,
-        .dx-sidebar .ant-menu-item-active {
+        .dx-sidebar .ant-menu-item-selected {
           color: ${INK} !important;
           background: ${BRAND_SOFT} !important;
           border-color: ${INK} !important;
@@ -216,6 +216,16 @@ export default function Sidebar({
         .dx-sidebar-collapse:active {
           transform: translate(0, 0) !important;
           box-shadow: none !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dx-sidebar .ant-menu-item,
+          .dx-sidebar-collapse {
+            transition-duration: 100ms !important;
+          }
+          .dx-sidebar-collapse:hover {
+            transform: none !important;
+            box-shadow: none !important;
+          }
         }
       `}</style>
     </Sider>

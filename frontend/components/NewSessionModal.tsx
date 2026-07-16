@@ -28,14 +28,14 @@ interface Props {
   defaultCollection?: string;
 }
 
-/* Warm-paper workbook palette (local fallback until global tokens land) */
-const INK = '#1C1A17';
-const INK_SECONDARY = '#6B645A';
-const PANEL = '#FFFDF8';
-const PAPER = '#FFF6EC';
-const BRAND = '#DE5126';
-const BRAND_SOFT = '#FBE9E0';
-const BRAND_HOVER = '#C4431B';
+/* Retro workbook palette (local fallback until global tokens land) */
+const INK = '#2B2419';
+const INK_SECONDARY = '#6B5F4C';
+const PANEL = '#FFFBF0';
+const PAPER = '#F7EDD8';
+const BRAND = '#C8392B';
+const BRAND_SOFT = '#F6DFC8';
+const BRAND_HOVER = '#A92E22';
 
 export default function NewSessionModal({
   open, onCancel, onCreated, defaultCollection = 'knowledge_chunks',
@@ -103,7 +103,7 @@ export default function NewSessionModal({
       className="dx-new-session-modal"
       styles={{
         header: {
-          borderBottom: `1px solid ${INK}`,
+          borderBottom: '1px solid var(--ink)',
           padding: '14px 20px',
         },
         body: {
@@ -112,7 +112,7 @@ export default function NewSessionModal({
           padding: '16px 20px',
         },
         footer: {
-          borderTop: `1px solid ${INK}`,
+          borderTop: '1px solid var(--ink)',
           padding: '12px 20px',
         },
       }}
@@ -164,6 +164,7 @@ export default function NewSessionModal({
               placeholder="选择解答方向"
               style={{ width: '100%' }}
               popupMatchSelectWidth
+              popupClassName="dx-persona-select-dropdown"
               options={qaPersonas.map((p) => ({
                 value: p.id,
                 label: (
@@ -221,52 +222,64 @@ export default function NewSessionModal({
       </Form>
 
       <style>{`
+        .dx-new-session-modal {
+          --ink: ${INK};
+          --ink-secondary: ${INK_SECONDARY};
+          --panel: ${PANEL};
+          --paper: ${PAPER};
+          --brand: ${BRAND};
+          --brand-hover: ${BRAND_HOVER};
+          --brand-soft: ${BRAND_SOFT};
+        }
         .dx-new-session-modal .ant-modal-content {
-          border: 1.5px solid ${INK} !important;
+          border: 1.5px solid var(--ink) !important;
           border-radius: 3px !important;
-          box-shadow: 6px 6px 0 ${INK} !important;
-          background: ${PANEL} !important;
+          box-shadow: 6px 6px 0 var(--ink) !important;
+          background: var(--panel) !important;
         }
         .dx-new-session-modal .ant-modal-header {
-          background: ${PANEL} !important;
+          background: var(--panel) !important;
           border-radius: 3px 3px 0 0 !important;
+          border-bottom: 1px solid var(--ink) !important;
         }
         .dx-new-session-modal .ant-modal-title {
-          color: ${INK} !important;
+          color: var(--ink) !important;
           font-size: 13px !important;
           font-weight: 600 !important;
         }
         .dx-new-session-modal .ant-modal-footer {
-          background: ${PANEL} !important;
+          background: var(--panel) !important;
           border-radius: 0 0 3px 3px !important;
+          border-top: 1px solid var(--ink) !important;
         }
         .dx-new-session-modal .ant-btn-primary {
-          background: ${BRAND} !important;
-          border: 1.5px solid ${INK} !important;
+          background: var(--brand) !important;
+          border: 1.5px solid var(--ink) !important;
           border-radius: 3px !important;
           box-shadow: none !important;
+          color: #fff !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
         .dx-new-session-modal .ant-btn-primary:hover {
-          background: ${BRAND_HOVER} !important;
-          box-shadow: 3px 3px 0 ${INK} !important;
+          background: var(--brand-hover) !important;
+          box-shadow: 3px 3px 0 var(--ink) !important;
           transform: translate(-1px, -1px);
         }
         .dx-new-session-modal .ant-btn-primary:active {
-          background: ${BRAND_HOVER} !important;
+          background: var(--brand-hover) !important;
           box-shadow: none !important;
           transform: translate(0, 0);
         }
         .dx-new-session-modal .ant-btn-default {
-          border: 1.5px solid ${INK} !important;
+          border: 1.5px solid var(--ink) !important;
           border-radius: 3px !important;
-          background: ${PAPER} !important;
-          color: ${INK} !important;
+          background: var(--paper) !important;
+          color: var(--ink) !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
         .dx-new-session-modal .ant-btn-default:hover {
-          background: ${BRAND_SOFT} !important;
-          box-shadow: 3px 3px 0 ${INK} !important;
+          background: var(--brand-soft) !important;
+          box-shadow: 3px 3px 0 var(--ink) !important;
           transform: translate(-1px, -1px);
         }
         .dx-new-session-modal .ant-btn-default:active {
@@ -274,66 +287,81 @@ export default function NewSessionModal({
           transform: translate(0, 0);
         }
         .dx-new-session-modal .ant-radio-button-wrapper {
-          border-color: ${INK} !important;
-          color: ${INK_SECONDARY} !important;
-          background: ${PAPER} !important;
+          border-color: var(--ink) !important;
+          color: var(--ink-secondary) !important;
+          background: var(--paper) !important;
+          border-radius: 3px !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
         .dx-new-session-modal .ant-radio-button-wrapper:not(:first-child)::before {
-          background: ${INK} !important;
+          background: var(--ink) !important;
         }
         .dx-new-session-modal .ant-radio-button-wrapper:hover {
-          color: ${INK} !important;
-          background: ${BRAND_SOFT} !important;
+          color: var(--ink) !important;
+          background: var(--brand-soft) !important;
         }
         .dx-new-session-modal .ant-radio-button-wrapper-checked {
-          background: ${BRAND} !important;
-          border-color: ${INK} !important;
-          color: ${PAPER} !important;
+          background: var(--brand) !important;
+          border-color: var(--ink) !important;
+          color: #fff !important;
         }
         .dx-new-session-modal .ant-radio-button-wrapper-checked:hover {
-          background: ${BRAND_HOVER} !important;
-          color: ${PAPER} !important;
+          background: var(--brand-hover) !important;
+          color: #fff !important;
         }
         .dx-new-session-modal .ant-select-selector {
           border-radius: 3px !important;
-          border-color: ${INK} !important;
-          background: ${PAPER} !important;
+          border-color: var(--ink) !important;
+          background: var(--paper) !important;
+          color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-select:hover .ant-select-selector {
-          border-color: ${INK} !important;
+          border-color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-select-focused .ant-select-selector {
-          border-color: ${BRAND} !important;
+          border-color: var(--brand) !important;
           box-shadow: none !important;
         }
         .dx-new-session-modal .ant-input {
           border-radius: 3px !important;
-          border-color: ${INK} !important;
-          background: ${PAPER} !important;
-          color: ${INK} !important;
+          border-color: var(--ink) !important;
+          background: var(--paper) !important;
+          color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-input:hover {
-          border-color: ${INK} !important;
+          border-color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-input:focus {
-          border-color: ${BRAND} !important;
+          border-color: var(--brand) !important;
           box-shadow: none !important;
         }
         .dx-new-session-modal .ant-form-item-label > label {
-          color: ${INK} !important;
+          color: var(--ink) !important;
           font-size: 13px !important;
           font-weight: 600 !important;
         }
         .dx-new-session-modal .ant-alert-icon {
-          color: ${BRAND} !important;
+          color: var(--brand) !important;
         }
         .dx-new-session-modal .ant-alert-message {
-          color: ${INK} !important;
+          color: var(--ink) !important;
           font-weight: 600 !important;
         }
         .dx-new-session-modal .ant-alert-description {
-          color: ${INK_SECONDARY} !important;
+          color: var(--ink-secondary) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dx-new-session-modal .ant-btn-primary,
+          .dx-new-session-modal .ant-btn-default,
+          .dx-new-session-modal .ant-radio-button-wrapper {
+            transition-duration: 100ms !important;
+          }
+          .dx-new-session-modal .ant-btn-primary:hover,
+          .dx-new-session-modal .ant-btn-default:hover,
+          .dx-new-session-modal .ant-radio-button-wrapper:hover {
+            transform: none !important;
+            box-shadow: none !important;
+          }
         }
       `}</style>
     </Modal>

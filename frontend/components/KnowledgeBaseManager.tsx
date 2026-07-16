@@ -11,6 +11,22 @@ import axios from 'axios';
 
 const { Text } = Typography;
 
+const BookStackSvg = () => (
+  <svg
+    width="96"
+    height="96"
+    viewBox="0 0 96 96"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M16 78h64M16 22v56M80 22v56M26 78V42a3 3 0 0 1 6 0v36M42 78V34a3 3 0 0 1 6 0v44M58 78V50a3 3 0 0 1 6 0v28M74 78l-8-26a3 3 0 0 0-5 1l8 25" />
+  </svg>
+);
+
 interface Collection { name: string; chunk_count: number; }
 
 interface Props {
@@ -70,8 +86,8 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
     <div className="kb-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--brand, #DE5126)' }} />
-          <h2 style={{ margin: 0, color: 'var(--ink, #1C1A17)' }}>知识库管理</h2>
+          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--brand, #C8392B)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink, #2B2419)', fontFamily: 'var(--font-display)' }}>知识库管理</h2>
         </div>
         <Button
           className="op-btn op-btn-primary"
@@ -84,9 +100,10 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
 
       {collections.length === 0 && !loading ? (
         <div className="op-empty">
-          <DatabaseOutlined style={{ fontSize: 32, color: 'var(--brand, #DE5126)' }} />
-          <h3>暂无知识库</h3>
-          <p>创建第一个知识库，开始上传文档并问答。</p>
+          <div className="op-empty-illustration">
+            <BookStackSvg />
+          </div>
+          <h3>书包还是空的，先建一个知识库</h3>
           <Button
             className="op-btn op-btn-primary"
             icon={<PlusOutlined />}
@@ -120,14 +137,14 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
                       style={{
                         fontSize: 22,
                         color: selectedCollection === item.name
-                          ? 'var(--brand, #DE5126)'
-                          : 'var(--ink-secondary, #6B645A)',
+                          ? 'var(--brand, #C8392B)'
+                          : 'var(--ink-secondary, #6B5F4C)',
                         flexShrink: 0,
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
                       <Space size={8} style={{ flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink, #1C1A17)' }}>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink, #2B2419)' }}>
                           {item.name}
                         </span>
                         {selectedCollection === item.name && (
@@ -135,7 +152,7 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
                         )}
                       </Space>
                       <div style={{
-                        color: 'var(--ink-secondary, #6B645A)',
+                        color: 'var(--ink-secondary, #6B5F4C)',
                         marginTop: 4,
                         fontSize: 13,
                         fontVariantNumeric: 'tabular-nums',
@@ -186,14 +203,6 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
         onCancel={() => setModalOpen(null)}
         okText={modalOpen === 'create' ? '创建' : '重命名'}
         className="op-modal"
-        styles={{
-          content: {
-            border: '1.5px solid var(--ink, #1C1A17)',
-            borderRadius: 3,
-            boxShadow: '6px 6px 0 var(--ink, #1C1A17)',
-          },
-          header: { borderBottom: '1px solid rgba(28,26,23,0.15)' },
-        }}
       >
         <Input
           className="op-input"
@@ -209,11 +218,12 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
 
       <style jsx>{`
         .kb-root {
-          color: var(--ink, #1C1A17);
+          color: var(--ink, #2B2419);
+          --font-display: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive;
         }
         .op-card {
-          background: var(--bg-panel, #FFFDF8);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--bg-panel, #FFFBF0);
+          border: 1.5px solid var(--ink, #2B2419);
           border-radius: 3px;
           transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -226,21 +236,21 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
         }
         .op-kb-item:hover {
           transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          box-shadow: 3px 3px 0 var(--ink, #2B2419);
         }
         .op-kb-item:active {
           transform: translate(0, 0);
           box-shadow: none;
         }
         .op-kb-item-active {
-          background: var(--brand-soft, #FBE9E0);
-          border-color: var(--brand, #DE5126);
+          background: var(--brand-soft, #F6DFC8);
+          border-color: var(--ink, #2B2419);
         }
         .op-btn {
           border-radius: 3px;
-          border: 1.5px solid var(--ink, #1C1A17);
-          background: var(--bg-panel, #FFFDF8);
-          color: var(--ink, #1C1A17);
+          border: 1.5px solid var(--ink, #2B2419);
+          background: var(--bg-panel, #FFFBF0);
+          color: var(--ink, #2B2419);
           transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -249,97 +259,103 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
         }
         .op-btn:hover {
           transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #1C1A17);
+          box-shadow: 3px 3px 0 var(--ink, #2B2419);
         }
         .op-btn:active {
           transform: translate(0, 0);
           box-shadow: none;
         }
         .op-btn-primary {
-          background: var(--brand, #DE5126);
-          border-color: var(--ink, #1C1A17);
+          background: var(--brand, #C8392B);
+          border-color: var(--ink, #2B2419);
           color: #fff;
         }
         .op-btn-primary:hover {
-          background: var(--brand-hover, #C4431B);
+          background: var(--brand-hover, #A92E22);
         }
         .op-btn-primary:disabled {
-          background: var(--bg-sunken, #F5EDDF);
-          color: var(--ink-faint, #A39A8C);
-          border-color: var(--ink-faint, #A39A8C);
+          background: var(--bg-sunken, #F0E3C6);
+          color: var(--ink-faint, #A3937A);
+          border-color: var(--ink-faint, #A3937A);
         }
         .op-link {
-          color: var(--ink-secondary, #6B645A);
+          color: var(--ink-secondary, #6B5F4C);
           transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .op-link:hover {
-          color: var(--brand, #DE5126);
+          color: var(--brand, #C8392B);
         }
         .op-link-danger {
-          color: var(--brand, #DE5126);
+          color: var(--brand, #C8392B);
           transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .op-link-danger:hover {
-          color: var(--brand-hover, #C4431B);
+          color: var(--brand-hover, #A92E22);
         }
         .op-tag {
           display: inline-flex;
           align-items: center;
           height: 22px;
           padding: 0 8px;
-          background: var(--brand-soft, #FBE9E0);
-          color: var(--brand, #DE5126);
-          border: 1.5px solid var(--ink, #1C1A17);
-          border-radius: 3px;
+          background: var(--brand-soft, #F6DFC8);
+          color: var(--brand, #C8392B);
+          border: 1.5px solid var(--ink, #2B2419);
+          border-radius: 3px 4px 2px 5px;
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
+          transform: rotate(-2deg);
+          box-shadow: 1.5px 1.5px 0 var(--ink, #2B2419);
         }
         .op-input {
-          border: 1.5px solid var(--ink, #1C1A17);
+          border: 1.5px solid var(--ink, #2B2419);
           border-radius: 3px;
-          background: var(--bg-panel, #FFFDF8);
+          background: var(--bg-panel, #FFFBF0);
           transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
             box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .op-input:focus {
-          border-color: var(--brand, #DE5126);
-          outline: 2px solid var(--brand, #DE5126);
+          border-color: var(--brand, #C8392B);
+          outline: 2px solid var(--brand, #C8392B);
           outline-offset: 2px;
         }
         .op-empty {
           text-align: center;
           padding: 56px 24px;
-          background: var(--bg-panel, #FFFDF8);
-          border: 1.5px solid var(--ink, #1C1A17);
+          background: var(--bg-panel, #FFFBF0);
+          border: 1.5px solid var(--ink, #2B2419);
           border-radius: 3px;
         }
+        .op-empty-illustration {
+          color: var(--ink-secondary, #6B5F4C);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
         .op-empty h3 {
-          margin: 16px 0 8px;
+          margin: 16px 0 20px;
           font-size: 16px;
           font-weight: 600;
-          color: var(--ink, #1C1A17);
-        }
-        .op-empty p {
-          margin: 0 0 24px;
-          color: var(--ink-secondary, #6B645A);
-          font-size: 14px;
+          color: var(--ink, #2B2419);
         }
         .op-modal :global(.ant-modal-content) {
-          background: var(--bg-panel, #FFFDF8) !important;
-          border: 1.5px solid var(--ink, #1C1A17) !important;
+          background: var(--bg-panel, #FFFBF0) !important;
+          border: 1.5px solid var(--ink, #2B2419) !important;
           border-radius: 3px !important;
-          box-shadow: 6px 6px 0 var(--ink, #1C1A17) !important;
+          box-shadow: 6px 6px 0 var(--ink, #2B2419) !important;
         }
         .op-modal :global(.ant-modal-header) {
-          background: var(--bg-panel, #FFFDF8) !important;
-          border-bottom: 1px solid rgba(28, 26, 23, 0.15) !important;
+          background: var(--bg-panel, #FFFBF0) !important;
+          border-bottom: 1px solid rgba(43, 36, 25, 0.15) !important;
         }
         .op-modal :global(.ant-modal-title) {
-          color: var(--ink, #1C1A17) !important;
+          color: var(--ink, #2B2419) !important;
         }
         @media (prefers-reduced-motion: reduce) {
           .op-card, .op-btn, .op-link, .op-link-danger, .op-input {
             transition: opacity 100ms ease;
+          }
+          .op-tag {
+            transform: none;
           }
         }
       `}</style>

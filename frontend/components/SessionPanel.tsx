@@ -33,15 +33,15 @@ interface Props {
   refreshTrigger?: number;
 }
 
-/* Warm-paper workbook palette (local fallback until global tokens land) */
-const INK = '#1C1A17';
-const INK_SECONDARY = '#6B645A';
-const INK_FAINT = '#A39A8C';
-const PANEL = '#FFFDF8';
-const PAPER = '#FFF6EC';
-const BRAND = '#DE5126';
-const BRAND_SOFT = '#FBE9E0';
-const BRAND_HOVER = '#C4431B';
+/* Retro workbook palette (local fallback until global tokens land) */
+const INK = '#2B2419';
+const INK_SECONDARY = '#6B5F4C';
+const INK_FAINT = '#A3937A';
+const PANEL = '#FFFBF0';
+const PAPER = '#F7EDD8';
+const BRAND = '#C8392B';
+const BRAND_HOVER = '#A92E22';
+const BRAND_SOFT = '#F6DFC8';
 
 export default function SessionPanel({
   activeSessionId, onSelectSession, onCreateSession, refreshTrigger = 0,
@@ -102,7 +102,7 @@ export default function SessionPanel({
     } catch { return iso; }
   };
 
-  const stickerRotation = (index: number) => index % 2 === 0 ? -1.5 : 1.5;
+  const stickerRotation = (index: number) => index % 2 === 0 ? -2 : 2;
 
   return (
     <div className="dx-session-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -151,9 +151,15 @@ export default function SessionPanel({
             paddingTop: 48,
             gap: 12,
           }}>
-            <MessageOutlined style={{ color: INK_FAINT, fontSize: 32 }} />
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: INK_FAINT }}>
+              <path d="M12 52L24 40L20 36L8 48V52H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M24 40L48 16L44 12L20 36L24 40Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M48 16L52 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M44 12H52V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 52H56" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+            </svg>
             <Text style={{ color: INK_SECONDARY, fontSize: 14 }}>
-              暂无会话
+              还没有存档，新建一个开始闯关
             </Text>
             <Button
               type="primary"
@@ -167,7 +173,7 @@ export default function SessionPanel({
                 boxShadow: 'none !important',
               }}
             >
-              开始对话
+              开始闯关
             </Button>
           </div>
         ) : (
@@ -175,6 +181,7 @@ export default function SessionPanel({
             dataSource={sessions}
             renderItem={(session, index) => {
               const isActive = activeSessionId === session.session_id;
+              const slotNum = String(index + 1).padStart(2, '0');
               return (
                 <div
                   onClick={() => onSelectSession(session)}
@@ -225,28 +232,33 @@ export default function SessionPanel({
                   </div>
                   <div style={{ marginBottom: 6, paddingRight: 28 }}>
                     <Text strong style={{ fontSize: 13, lineHeight: '1.4', color: INK }} ellipsis>
+                      <span style={{ fontFamily: '"ZCOOL KuaiLe", cursive' }}>存档</span>
+                      <span style={{ fontFamily: '"Press Start 2P", monospace', marginLeft: 6, marginRight: 8 }}>{slotNum}</span>
                       {session.title || '新会话'}
                     </Text>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 4px', marginBottom: 6 }}>
                     <Tag
+                      className="dx-session-sticker"
                       style={{
                         fontSize: 10,
                         lineHeight: '18px',
                         border: `1.5px solid ${INK} !important`,
                         borderRadius: '3px !important',
                         color: INK,
-                        background: BRAND_SOFT,
+                        background: `${PAPER} !important`,
                         margin: 0,
                         fontWeight: 500,
                         transform: `rotate(${stickerRotation(index)}deg)`,
                         transformOrigin: 'center center',
+                        transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                       }}
                     >
                       {personas[session.persona] || session.persona}
                     </Tag>
                     {session.mode === 'examiner' && (
                       <Tag
+                        className="dx-session-sticker"
                         style={{
                           fontSize: 10,
                           lineHeight: '18px',
@@ -254,10 +266,11 @@ export default function SessionPanel({
                           borderRadius: '3px !important',
                           margin: 0,
                           color: INK,
-                          background: PAPER,
+                          background: `${PAPER} !important`,
                           fontWeight: 500,
                           transform: `rotate(${-stickerRotation(index)}deg)`,
                           transformOrigin: 'center center',
+                          transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                         }}
                       >
                         模拟面试
@@ -277,6 +290,7 @@ export default function SessionPanel({
                       fontWeight: 500,
                       whiteSpace: 'nowrap',
                       fontVariantNumeric: 'tabular-nums',
+                      fontFamily: '"Press Start 2P", monospace',
                     }}>
                       {session.total_tokens.toLocaleString()} tokens
                     </Text>
@@ -290,7 +304,7 @@ export default function SessionPanel({
 
       <style>{`
         .dx-session-card {
-          background: ${PANEL};
+          background: ${PAPER};
           border: 1.5px solid ${INK};
           border-radius: 3px;
           box-shadow: none;
@@ -304,9 +318,21 @@ export default function SessionPanel({
           transform: translate(-1px, -1px);
           box-shadow: 3px 3px 0 ${INK};
         }
+        .dx-session-card-active:hover {
+          transform: none;
+          box-shadow: none !important;
+        }
         .dx-session-card:hover .dx-session-actions,
         .dx-session-card-active .dx-session-actions {
           opacity: 1 !important;
+        }
+        .dx-session-sticker:hover {
+          transform: rotate(0deg) translate(-1px, -1px) !important;
+          box-shadow: 3px 3px 0 ${INK} !important;
+        }
+        .dx-session-sticker:active {
+          transform: rotate(0deg) translate(0, 0) !important;
+          box-shadow: none !important;
         }
         .dx-session-panel .ant-btn-primary:hover {
           background: ${BRAND_HOVER} !important;
@@ -317,6 +343,19 @@ export default function SessionPanel({
           background: ${BRAND_HOVER} !important;
           box-shadow: none !important;
           transform: translate(0, 0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dx-session-card,
+          .dx-session-sticker,
+          .dx-session-panel .ant-btn-primary {
+            transition-duration: 100ms !important;
+          }
+          .dx-session-card:hover,
+          .dx-session-card-active:hover,
+          .dx-session-sticker:hover {
+            transform: none !important;
+            box-shadow: none !important;
+          }
         }
       `}</style>
     </div>
