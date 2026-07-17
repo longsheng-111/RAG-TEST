@@ -31,6 +31,7 @@
   /* ---- Classroom narrative (v1.6·批次二) ---- */
   --wall-paper: #F2E6CC;       /* 板外墙面底色（纸色系浅调） */
   --sticky-yellow: #FEF3C7;    /* 便利贴黄（--cite-4 浅调派生） */
+  --wall-felt: #EBD9BA;        /* 毛毡公告栏底色（v1.8）· 比纸色深半格 · on --ink ≈ 11.6:1 AAA */
 
   --cite-1: #2F9BE8;
   --cite-2: #8B5CF6;
@@ -875,7 +876,6 @@ h4 { font-size: 14px; }
     transition: opacity 100ms ease !important;
   }
   .ep-root .chalk-box:hover { transform: none; }
-  /* 粉笔盒互动件 + 书写动画：过渡/动画整体退化 */
   .ep-root .chalk-box .chalk-box-lid,
   .ep-root .chalk-box .chalk-stick,
   .ep-root .chalk-box .chalk-jumper {
@@ -889,58 +889,334 @@ h4 { font-size: 14px; }
     stroke-dashoffset: 0;
     opacity: 1;
   }
+  /* v1.8 公告栏：hover 动画退化 */
+  .ep-board-item {
+    transition: opacity 100ms ease !important;
+  }
+  .ep-board-item:hover {
+    transform: none !important;
+  }
 }
 
 /* ============================================================
-   教室叙事 · 板外墙面（v1.6·批次二）
-   纸面世界容器：米黄底 + 竖向细条纹，板外两侧贴纸
-   1280px 以下隐藏贴纸（不挤压主区）
+   教室叙事 · 毛毡公告栏（v1.8·批次二）
+   板外两侧：软木/毛毡底 + 3 层纵向构图 + 挂绳木条收边
+   1280px 以下整体隐藏；1440px + 900px 黑板只保留首层
    ============================================================ */
+
+/* 墙面基底：毛毡色 + SVG 噪点纹理 */
 .ep-wall {
   position: relative;
   min-height: 100%;
-  background: var(--bg-paper);
-  background-image:
-    repeating-linear-gradient(90deg, rgba(43,36,25,0.03) 0 1px, transparent 1px 40px);
+  background: var(--wall-felt, #EBD9BA);
+  /* 噪点纹理：CSS 生成 SVG feTurbulence，≤5% */
+  --noise-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+.ep-wall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: var(--noise-url);
+  pointer-events: none;
+  z-index: 0;
 }
 
-/* 墙面贴纸通用 */
-.ep-wall-sticker {
+/* ---- 公告栏侧边容器 ---- */
+.ep-bulletin-board {
   position: absolute;
+  top: 0;
+  bottom: 0;
   z-index: 2;
-  padding: 12px 14px;
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+  padding-bottom: 24px;
+  gap: 14px;
+}
+.ep-bulletin-board--left {
+  left: 0;
+  width: 190px;
+}
+.ep-bulletin-board--right {
+  right: 0;
+  width: 190px;
+}
+
+/* 挂绳/木条收边 */
+.ep-board-hanger {
+  position: absolute;
+  top: 16px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--ink);
+  z-index: 3;
+}
+/* 两端圆钉 */
+.ep-board-hanger::before,
+.ep-board-hanger::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-secondary);
+  border: 1px solid var(--ink);
+}
+.ep-board-hanger::before { left: 0; }
+.ep-board-hanger::after { right: 0; }
+
+/* ---- 公告栏单项（贴纸/便签/奖状等） ---- */
+.ep-board-item {
+  position: relative;
+  pointer-events: auto;
+  transition: transform 200ms var(--ease-pop), box-shadow 200ms var(--ease-base);
+}
+.ep-board-item:hover {
+  z-index: 5;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* 单项内纸卡 */
+.ep-board-item-inner {
+  padding: 10px 12px;
   border: 1.5px solid var(--ink);
   border-radius: var(--radius);
   box-shadow: 2px 2px 0 var(--ink);
   background: var(--bg-panel);
-  pointer-events: none;
-  user-select: none;
-}
-.ep-wall-sticker--left {
-  left: 12px;
-  top: 20px;
-  transform: rotate(-2deg);
-}
-.ep-wall-sticker--right {
-  right: 12px;
-  top: 20px;
-  background: var(--sticky-yellow, #FEF3C7);
-  transform: rotate(2deg);
+  font-family: var(--font-display);
 }
 
-/* 胶带贴角 */
-.sticker-tape {
+/* 图钉（红色圆形，带高光点） */
+.ep-pushpin {
   position: absolute;
-  width: 16px;
-  height: 10px;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 1px solid var(--ink);
+  z-index: 2;
+}
+.ep-pushpin::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 4px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+}
+
+/* ---- 课表卡片 ---- */
+.ep-schedule-card {
+  width: 148px;
+}
+.ep-schedule-card .ep-board-item-inner {
+  padding: 10px 10px 8px;
+}
+.ep-schedule-title {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.ep-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  color: var(--ink-secondary);
+  font-family: var(--font-display);
+}
+.ep-schedule-table td {
+  padding: 2px 3px;
+  border-bottom: 1px solid var(--border);
+}
+.ep-schedule-table tr:last-child td { border-bottom: none; }
+
+/* ---- 学习目标便签 ---- */
+.ep-goals-sticky {
+  width: 138px;
+  margin-left: 12px;
+}
+.ep-goals-sticky .ep-board-item-inner {
+  background: var(--sticky-yellow, #FEF3C7);
+  padding: 8px 10px;
+}
+.ep-goals-title {
+  font-size: 11px;
+  color: var(--ink);
+  text-align: center;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.ep-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--ink-secondary);
+  line-height: 1.8;
+  font-family: var(--font-display);
+}
+.ep-checklist-item::before {
+  content: '';
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--ink);
+  border-radius: 1px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+}
+.ep-checklist-item.ep--checked {
+  color: var(--ink-faint);
+}
+.ep-checklist-item.ep--checked::before {
+  background: var(--bg-sunken);
+  /* 手写勾：CSS 伪勾 */
+  box-shadow: inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--ink);
+}
+
+/* ---- 纸飞机 ---- */
+.ep-plane-wrapper {
+  width: 80px;
+  margin-left: 6px;
+}
+.ep-plane-svg {
+  display: block;
+}
+.ep-plane-trail {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ---- 倒计时便签 ---- */
+.ep-countdown-sticky {
+  width: 148px;
+}
+.ep-countdown-sticky .ep-board-item-inner {
+  background: var(--sticky-yellow, #FEF3C7);
+  text-align: center;
+  padding: 10px 12px 8px;
+}
+.ep-countdown-label {
+  font-size: 11px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.ep-countdown-number {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  color: var(--brand);
+  margin: 4px 0;
+  line-height: 1.2;
+}
+.ep-countdown-note {
+  font-size: 9px;
+  color: var(--ink-faint);
+}
+
+/* ---- 小红花奖状 ---- */
+.ep-certificate {
+  width: 130px;
+  margin-right: 8px;
+}
+.ep-certificate .ep-board-item-inner {
+  text-align: center;
+  border-color: var(--brand);
+  padding: 8px 10px;
+}
+.ep-cert-star {
+  font-size: 16px;
+  color: var(--brand);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.ep-cert-title {
+  font-size: 11px;
+  color: var(--brand);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.ep-cert-sub {
+  font-size: 8px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* 奖状保留胶带贴角 */
+.ep-cert-tape {
+  position: absolute;
+  width: 12px;
+  height: 8px;
   background: rgba(255, 251, 240, 0.6);
   border: 0.5px solid rgba(43, 36, 25, 0.12);
   z-index: 1;
 }
 
-/* 1280px 以下隐藏贴纸 */
+/* ---- 备忘清单 ---- */
+.ep-memo-sticky {
+  width: 120px;
+  margin-right: 4px;
+}
+.ep-memo-sticky .ep-board-item-inner {
+  padding: 8px 10px;
+}
+.ep-memo-title {
+  font-size: 10px;
+  color: var(--ink);
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.ep-memo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 10px;
+  color: var(--ink-secondary);
+  font-family: var(--font-display);
+}
+.ep-memo-list li {
+  padding: 2px 0;
+  padding-left: 10px;
+  position: relative;
+}
+.ep-memo-list li::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: var(--ink-faint);
+}
+
+/* ---- hover 回正 + 微上浮 ---- */
+.ep-board-item:hover {
+  transform: rotate(0deg) translate(-1px, -1px) !important;
+}
+
+/* ---- 响应式 ---- */
+/* ≤1280px：两侧公告栏整体隐藏 */
 @media (max-width: 1280px) {
-  .ep-wall-sticker { display: none; }
+  .ep-bulletin-board { display: none; }
+}
+/* ≤1440px + 黑板 900px 宽（exam）：每侧只留第一层 */
+@media (max-width: 1440px) {
+  .ep-bulletin-board--exam-left .ep-board-item:not(.ep-board-item--first),
+  .ep-bulletin-board--exam-right .ep-board-item:not(.ep-board-item--first) {
+    display: none;
+  }
 }
 
 /* ============================================================
@@ -1071,7 +1347,7 @@ h4 { font-size: 14px; }
   to { opacity: 0.7; r: 2; }
 }
 
-/* ---- 教室叙事 · 粉笔盒（v1.6·批次一） ---- */
+/* ---- 教室叙事 · 粉笔盒（v1.8 拟真重绘） ---- */
 .ep-root .chalk-box {
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: default;
@@ -1080,22 +1356,21 @@ h4 { font-size: 14px; }
   transform: scale(1.06);
 }
 
-/* ---- 粉笔盒互动动画（v1.6·批次二）：hover 掀盖 / 滚粉笔 / 起跳 ---- */
-/* 盒盖基准角：CSS transform 取代原 SVG attribute；view-box 下原点 (155,32) */
+/* ---- 粉笔盒互动动画（v1.8）：hover 掀盖 / 滚粉笔 / 起跳 ---- */
+/* 盒盖：view-box 下旋转原点在盒后上沿 (175,25) */
 .ep-root .chalk-box-lid {
   transform-box: view-box;
-  transform-origin: 155px 32px;
+  transform-origin: 108px 25px;
   transition: transform 260ms var(--ease-pop);
 }
-.ep-root .chalk-box--idle .chalk-box-lid { transform: rotate(-20deg); }
+.ep-root .chalk-box--idle .chalk-box-lid { transform: rotate(-22deg); }
 .ep-root .chalk-box--start .chalk-box-lid,
-.ep-root .chalk-box--score .chalk-box-lid { transform: rotate(-28deg); }
+.ep-root .chalk-box--score .chalk-box-lid { transform: rotate(-30deg); }
 /* hover 再掀 8° */
-.ep-root .chalk-box--idle:hover .chalk-box-lid { transform: rotate(-28deg); }
+.ep-root .chalk-box--idle:hover .chalk-box-lid { transform: rotate(-30deg); }
 .ep-root .chalk-box--start:hover .chalk-box-lid,
-.ep-root .chalk-box--score:hover .chalk-box-lid { transform: rotate(-36deg); }
-/* 粉笔：fill-box 使 rotate 绕自身中心；y/height 过渡自组件 inline 样式迁来，
-   与 transform 过渡并列（inline transition 会盖掉类规则，故集中于此） */
+.ep-root .chalk-box--score:hover .chalk-box-lid { transform: rotate(-38deg); }
+/* 粉笔单体：fill-box 绕自身中心旋转 */
 .ep-root .chalk-box .chalk-stick {
   transform-box: fill-box;
   transform-origin: center;
@@ -1104,7 +1379,11 @@ h4 { font-size: 14px; }
 .ep-root .chalk-box:hover .chalk-stick--first {
   transform: rotate(180deg);
 }
-/* “开始面试”起跳粉笔：抛物线跃出盒口，躺到槽沿 */
+/* 粉笔消耗状态：粉笔头（缩短 + 顶面下移） */
+.ep-root .chalk-box .chalk-stick--stub {
+  transition: y 200ms var(--ease-pop), height 200ms var(--ease-pop), opacity 200ms var(--ease-base);
+}
+/* “开始面试”起跳粉笔 */
 .ep-root .chalk-jumper {
   transform-box: fill-box;
   transform-origin: center;
@@ -1115,11 +1394,7 @@ h4 { font-size: 14px; }
   55% { transform: translate(34px, -26px) rotate(45deg); }
   100% { transform: translate(64px, 44px) rotate(90deg); }
 }
-@keyframes chalk-pop {
-  0% { transform: translateY(0); }
-  60% { transform: translateY(-18px); }
-  100% { transform: translateY(0); }
-}
+/* 粉笔灰飘落 */
 @keyframes chalk-dust-fall {
   0% { opacity: 0.6; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(8px); }

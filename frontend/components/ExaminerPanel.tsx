@@ -66,75 +66,157 @@ interface Props {
 const MAX_QUESTIONS = 5;
 
 /* ============================================================
-   教室叙事 · 粉笔盒（v1.6·批次一）
-   纯 inline SVG 分层绘制：盒盖/盒身/粉笔/灰粒各独立层
+   教室叙事 · 粉笔盒（v1.8 拟真重绘）
+   三点透视精细手绘 SVG，分层：盒身/盒盖/粉笔×N/灰堆
+   结构真实但仍带 1.5px 描边的插画感，不做照片级渐变
    ============================================================ */
 function ChalkBox({ wholeCount, stubCount, animStage }: {
-  wholeCount: number;   // 盒内整支粉笔数
-  stubCount: number;    // 已消耗的粉笔头数
+  wholeCount: number;
+  stubCount: number;
   animStage: 'idle' | 'start' | 'score';
 }) {
   const total = wholeCount + stubCount;
+  const chalkColors = ['var(--chalk-bright)', 'var(--chalk-yellow)', 'var(--brand)', 'var(--chalk-bright)', 'var(--chalk-bright)'];
+  // 粉笔在盒内的 x 位置（沿盒口前缘分布）
+  const chalkPositions = [
+    { cx: 68, baseY: 56 } as const,
+    { cx: 83, baseY: 55 } as const,
+    { cx: 98, baseY: 57 } as const,
+    { cx: 113, baseY: 54 } as const,
+    { cx: 128, baseY: 56 } as const,
+  ];
+
   return (
     <svg
       className={`chalk-box chalk-box--${animStage}`}
-      viewBox="0 0 180 90"
-      width="100"
-      height="50"
+      viewBox="0 0 200 130"
+      width="110"
+      height="72"
       aria-label="粉笔盒"
       style={{ position: 'absolute', left: 8, bottom: -24, zIndex: 1 }}
     >
-      {/* 盒身 */}
-      <rect x="15" y="32" width="140" height="44" rx="3"
-        fill="var(--ink-secondary)" stroke="var(--ink)" strokeWidth="1.5" />
-      {/* 盒盖（角度由 globals.css .chalk-box-lid 按 stage 控制，hover 再掀 8°） */}
+      {/* ---- 盒底投影（硬阴影语言，按透视变形） ---- */}
+      <polygon points="42,112 168,112 178,86 48,86"
+        fill="rgba(0,0,0,0.18)"
+      />
+
+      {/* ---- 盒身右侧面（背光面，加深 12%） ---- */}
+      <polygon points="157,50 162,108 172,80 167,24"
+        fill="#9B8B72" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="round"
+      />
+
+      {/* ---- 盒身正面 ---- */}
+      <polygon points="37,108 162,108 157,50 42,50"
+        fill="#C4B08A" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="round"
+      />
+
+      {/* ---- 盒口内腔（深色，深于板色 15%） ---- */}
+      <polygon points="42,50 157,50 167,24 52,24"
+        fill="#1A3025" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="round"
+      />
+      {/* 盒口前缘纸板厚度线 */}
+      <line x1="42" y1="50" x2="157" y2="50"
+        stroke="var(--ink)" strokeWidth="1.2" />
+
+      {/* ---- 盒盖（翻开立起于盒身侧后方，内面浅纸板色） ---- */}
       <g className="chalk-box-lid">
-        <rect x="12" y="10" width="146" height="22" rx="3"
-          fill="var(--ink)" stroke="var(--ink)" strokeWidth="1.5" />
+        {/* 盒盖内面 */}
+        <polygon points="52,24 167,24 148,-8 33,-8"
+          fill="#DDD0B8" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="round"
+        />
+        {/* 盒盖纸板厚度边 */}
+        <line x1="52" y1="24" x2="167" y2="24"
+          stroke="var(--ink)" strokeWidth="1.2" />
       </g>
-      {/* 粉笔（从盒口伸出；chalk-stick--first 为下一支整支，hover 滚半圈；
-          y/height/transform 过渡集中在 globals.css .chalk-stick） */}
+
+      {/* ---- 粉笔（圆柱体 + 顶面椭圆高光） ---- */}
       {Array.from({ length: total }).map((_, i) => {
         const isStub = i < stubCount;
-        const colors = ['var(--chalk-bright)', 'var(--chalk-yellow)', 'var(--brand)', 'var(--chalk-bright)', 'var(--chalk-bright)'];
+        const pos = chalkPositions[i] || chalkPositions[chalkPositions.length - 1];
+        const fullHeight = 45 - (i % 3) * 4; // 每支高度略有变化
+        const stubHeight = 10 + (i % 3) * 2;
+        const chalkH = isStub ? stubHeight : fullHeight;
+        const topY = pos.baseY - chalkH;
         const cls = `chalk-stick${isStub ? ' chalk-stick--stub' : ''}${i === stubCount ? ' chalk-stick--first' : ''}`;
         return (
-          <rect key={i}
-            className={cls}
-            x={22 + i * 14} y={isStub ? 34 : 14}
-            width="8" height={isStub ? 12 : 36} rx="3"
-            fill={colors[i % colors.length]}
-            stroke="rgba(0,0,0,0.3)" strokeWidth="0.8"
-          />
+          <g key={i} className={cls}>
+            {/* 粉笔柱身 */}
+            <rect x={pos.cx - 5} y={topY} width="10" height={chalkH} rx="3"
+              fill={chalkColors[i % chalkColors.length]}
+              stroke="var(--ink)" strokeWidth="0.8"
+            />
+            {/* 顶面椭圆高光 */}
+            <ellipse cx={pos.cx} cy={topY} rx="5" ry="2.5"
+              fill="rgba(255,255,255,0.45)"
+              stroke="var(--ink)" strokeWidth="0.6"
+            />
+          </g>
         );
       })}
-      {/* 起跳粉笔（animStage==='start' 时跳出盒口，动画见 globals.css ep-chalk-jump） */}
+
+      {/* ---- 起跳粉笔（animStage==='start' 时跳出盒口） ---- */}
       {animStage === 'start' && (
-        <rect className="chalk-jumper"
-          x="30" y="14" width="8" height="36" rx="3"
-          fill="var(--chalk-bright)"
-          stroke="rgba(0,0,0,0.3)" strokeWidth="0.8"
-        />
+        <g className="chalk-jumper">
+          <rect x="93" y="4" width="10" height="46" rx="3"
+            fill="var(--chalk-bright)" stroke="var(--ink)" strokeWidth="0.8"
+          />
+          <ellipse cx="98" cy="4" rx="5" ry="2.5"
+            fill="rgba(255,255,255,0.45)" stroke="var(--ink)" strokeWidth="0.6"
+          />
+        </g>
       )}
-      {/* 盒身文字 */}
-      <text x="90" y="68" textAnchor="middle"
-        fontFamily="var(--font-display)" fontSize="6" fill="var(--chalk)" opacity="0.7">
-        DX牌无尘粉笔
+
+      {/* ---- 盒身正面印刷 ---- */}
+      {/* 品牌红装饰横条 */}
+      <rect x="52" y="72" width="92" height="2.5" rx="1"
+        fill="var(--brand)" opacity="0.85" />
+      {/* DX 无尘粉笔 */}
+      <text x="98" y="88" textAnchor="middle"
+        fontFamily="var(--font-display)" fontSize="7.5" fontWeight="600"
+        fill="var(--ink)" letterSpacing="0.5">
+        DX 无尘粉笔
       </text>
-      {/* 粉笔灰 */}
+      {/* 角落小粉笔图案 */}
+      <g transform="translate(135, 96) scale(0.6)" opacity="0.5">
+        <rect x="0" y="0" width="6" height="18" rx="2"
+          fill="none" stroke="var(--ink)" strokeWidth="1.5" />
+        <ellipse cx="3" cy="0" rx="3" ry="1.5"
+          fill="none" stroke="var(--ink)" strokeWidth="1" />
+      </g>
+
+      {/* ---- 盒身侧面竖排小字 ---- */}
+      <text x="167" y="68" textAnchor="middle"
+        fontFamily="var(--font-display)" fontSize="5.5" fill="var(--ink)" opacity="0.55"
+        writingMode="vertical-rl" letterSpacing="1">
+        5支装
+      </text>
+
+      {/* ---- 粉笔灰粒子（盒底与槽面接触处） ---- */}
+      <circle cx="52" cy="113" r="1.5" fill="var(--chalk)" opacity="0.45" />
+      <circle cx="72" cy="115" r="1.2" fill="var(--chalk)" opacity="0.35" />
+      <circle cx="90" cy="114" r="1.0" fill="var(--chalk-yellow)" opacity="0.4" />
+      <circle cx="110" cy="116" r="1.4" fill="var(--chalk)" opacity="0.35" />
+      <circle cx="130" cy="113" r="1.1" fill="var(--chalk-bright)" opacity="0.4" />
+      <circle cx="148" cy="115" r="1.3" fill="var(--chalk)" opacity="0.3" />
+      <circle cx="160" cy="112" r="0.9" fill="var(--chalk)" opacity="0.35" />
+      {/* 灰色粉痕 */}
+      <ellipse cx="98" cy="114" rx="28" ry="2.5"
+        fill="var(--chalk-faint)" opacity="0.18" />
+
+      {/* ---- 评分阶段粉笔灰飘落动画 ---- */}
       {animStage === 'score' && (
         <>
-          <circle cx="30" cy="78" r="1.2" fill="var(--chalk)" opacity="0.5">
-            <animate attributeName="cy" from="76" to="84" dur="2s" fill="freeze" />
-            <animate attributeName="opacity" from="0.6" to="0" dur="2s" fill="freeze" />
+          <circle cx="48" cy="108" r="1.2" fill="var(--chalk)" opacity="0.5">
+            <animate attributeName="cy" from="108" to="118" dur="2s" fill="freeze" />
+            <animate attributeName="opacity" from="0.5" to="0" dur="2s" fill="freeze" />
           </circle>
-          <circle cx="130" cy="76" r="1" fill="var(--chalk)" opacity="0.4">
-            <animate attributeName="cy" from="74" to="82" dur="1.8s" fill="freeze" />
-            <animate attributeName="opacity" from="0.5" to="0" dur="1.8s" fill="freeze" />
+          <circle cx="145" cy="106" r="1" fill="var(--chalk)" opacity="0.4">
+            <animate attributeName="cy" from="106" to="116" dur="1.8s" fill="freeze" />
+            <animate attributeName="opacity" from="0.4" to="0" dur="1.8s" fill="freeze" />
           </circle>
-          <circle cx="80" cy="80" r="0.8" fill="var(--chalk-yellow)" opacity="0.45">
-            <animate attributeName="cy" from="78" to="86" dur="2.2s" fill="freeze" />
-            <animate attributeName="opacity" from="0.5" to="0" dur="2.2s" fill="freeze" />
+          <circle cx="98" cy="108" r="0.8" fill="var(--chalk-yellow)" opacity="0.45">
+            <animate attributeName="cy" from="108" to="120" dur="2.2s" fill="freeze" />
+            <animate attributeName="opacity" from="0.45" to="0" dur="2.2s" fill="freeze" />
           </circle>
         </>
       )}
@@ -188,45 +270,126 @@ function CornerLamp() {
 /** 粉笔盒与角花共享样式 → 移入 globals.css .ep-root 段 */
 
 /* ============================================================
-   教室叙事 · 板外墙面贴纸（v1.6·批次二）
+   教室叙事 · 毛毡公告栏（v1.8·批次二）
+   左侧公告栏：课表 + 学习目标便签 + 纸飞机（3 层纵向构图）
+   右侧公告栏：倒计时 + 小红花奖状 + 备忘清单（3 层纵向构图）
    ============================================================ */
-/** 左侧课程表贴纸 */
-function ScheduleSticker() {
+
+/** 左侧公告栏：今日课表 → 学习目标便签 → 纸飞机 */
+function LeftBulletinBoard({ isExam }: { isExam?: boolean }) {
   return (
-    <div className="ep-wall-sticker ep-wall-sticker--left" aria-hidden="true">
-      {/* 胶带贴角 */}
-      <div className="sticker-tape" style={{ top: -4, left: 16 }} />
-      <div className="sticker-tape" style={{ bottom: -4, right: 12 }} />
-      {/* 课程表内容 */}
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--ink)', textAlign: 'center', marginBottom: 6 }}>
-        今日课表
+    <div className={`ep-bulletin-board ep-bulletin-board--left${isExam ? ' ep-bulletin-board--exam-left' : ''}`} aria-hidden="true">
+      <div className="ep-board-hanger" />
+
+      {/* 第 1 层：今日课表（升级：140-160px 宽，红色图钉） */}
+      <div className="ep-board-item ep-board-item--schedule ep-board-item--first"
+        style={{ transform: 'rotate(-1.5deg)' }}>
+        <div className="ep-pushpin" />
+        <div className="ep-schedule-card">
+          <div className="ep-board-item-inner">
+            <div className="ep-schedule-title">今日课表</div>
+            <table className="ep-schedule-table">
+              <tbody>
+                <tr><td>第1节</td><td>概念题</td></tr>
+                <tr><td>第2节</td><td>原理题</td></tr>
+                <tr><td>第3节</td><td>对比题</td></tr>
+                <tr><td>第4节</td><td>场景题</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, color: 'var(--ink-secondary)', fontFamily: 'var(--font-display)' }}>
-        <tbody>
-          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第1节</td><td style={{ borderBottom: '1px solid var(--border)' }}>概念题</td></tr>
-          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第2节</td><td style={{ borderBottom: '1px solid var(--border)' }}>原理题</td></tr>
-          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第3节</td><td style={{ borderBottom: '1px solid var(--border)' }}>对比题</td></tr>
-          <tr><td style={{ padding: '2px 4px' }}>第4节</td><td>场景题</td></tr>
-        </tbody>
-      </table>
+
+      {/* 第 2 层：学习目标便签（黄色便签 + 3 行手写清单，前两行已勾选） */}
+      <div className="ep-board-item ep-board-item--goals"
+        style={{ transform: 'rotate(-1.5deg)' }}>
+        <div className="ep-goals-sticky">
+          <div className="ep-board-item-inner">
+            <div className="ep-goals-title">📋 学习目标</div>
+            <div className="ep-checklist-item ep--checked">掌握核心概念</div>
+            <div className="ep-checklist-item ep--checked">理解原理机制</div>
+            <div className="ep-checklist-item">能独立表达</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 第 3 层：纸飞机（折纸飞机 + 虚线尾迹） */}
+      <div className="ep-board-item ep-board-item--plane"
+        style={{ transform: 'rotate(2deg)' }}>
+        <div className="ep-plane-wrapper">
+          {/* 纸飞机本体 */}
+          <svg className="ep-plane-svg" viewBox="0 0 60 32" width="60" height="32" aria-hidden="true">
+            <polygon points="30,2 50,24 36,20 30,30 24,20 10,24"
+              fill="var(--bg-panel)" stroke="var(--ink)" strokeWidth="1.5"
+              strokeLinejoin="round" />
+            <line x1="30" y1="30" x2="30" y2="20"
+              stroke="var(--ink)" strokeWidth="1" opacity="0.5" />
+          </svg>
+          {/* 尾迹虚线弧 */}
+          <svg className="ep-plane-trail" viewBox="0 0 56 10" width="56" height="10" aria-hidden="true">
+            <path d="M54,5 Q36,-2 18,5 Q10,7 2,5"
+              fill="none" stroke="var(--ink-faint)" strokeWidth="1"
+              strokeDasharray="2 3" strokeLinecap="round" opacity="0.5" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
 
-/** 右侧倒计时便利贴 */
-function CountdownSticker() {
+/** 右侧公告栏：倒计时便利贴 → 小红花奖状 → 备忘清单 */
+function RightBulletinBoard({ isExam }: { isExam?: boolean }) {
   return (
-    <div className="ep-wall-sticker ep-wall-sticker--right" aria-hidden="true">
-      <div className="sticker-tape" style={{ top: -4, left: 14 }} />
-      <div className="sticker-tape" style={{ bottom: -4, right: 14 }} />
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--ink)', textAlign: 'center' }}>
-        距离面试还有
+    <div className={`ep-bulletin-board ep-bulletin-board--right${isExam ? ' ep-bulletin-board--exam-right' : ''}`} aria-hidden="true">
+      <div className="ep-board-hanger" />
+
+      {/* 第 1 层：倒计时便利贴（升级：同课表量级，红色图钉） */}
+      <div className="ep-board-item ep-board-item--countdown ep-board-item--first"
+        style={{ transform: 'rotate(2deg)' }}>
+        <div className="ep-pushpin" />
+        <div className="ep-countdown-sticky">
+          <div className="ep-board-item-inner">
+            <div className="ep-countdown-label">距离面试还有</div>
+            <div className="ep-countdown-number">? 天</div>
+            <div className="ep-countdown-note">认真准备 · 全力以赴</div>
+          </div>
+        </div>
       </div>
-      <div style={{ fontFamily: 'var(--font-pixel)', fontSize: 18, color: 'var(--brand)', textAlign: 'center', margin: '6px 0' }}>
-        ? 天
+
+      {/* 第 2 层：小红花奖状（迷你奖状贴纸，胶带贴角） */}
+      <div className="ep-board-item ep-board-item--cert"
+        style={{ transform: 'rotate(1.5deg)' }}>
+        {/* 胶带贴角 */}
+        <div className="ep-cert-tape" style={{ top: -3, left: 16 }} />
+        <div className="ep-cert-tape" style={{ bottom: -3, right: 14 }} />
+        <div className="ep-certificate">
+          <div className="ep-board-item-inner">
+            {/* 五角星 */}
+            <svg viewBox="0 0 24 24" width="20" height="20"
+              style={{ display: 'block', margin: '0 auto 2px' }} aria-hidden="true">
+              <polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9"
+                fill="none" stroke="var(--brand)" strokeWidth="1.5"
+                strokeLinejoin="round" />
+            </svg>
+            <div className="ep-cert-title">进步之星</div>
+            <div className="ep-cert-sub">特发此状 · 以资鼓励</div>
+          </div>
+        </div>
       </div>
-      <div style={{ fontSize: 9, color: 'var(--ink-faint)', textAlign: 'center' }}>
-        认真准备 · 全力以赴
+
+      {/* 第 3 层：备忘清单（纸色长条便签 + 趣味备忘） */}
+      <div className="ep-board-item ep-board-item--memo"
+        style={{ transform: 'rotate(-1deg)' }}>
+        <div className="ep-memo-sticky">
+          <div className="ep-board-item-inner">
+            <div className="ep-memo-title">📝 备忘</div>
+            <ul className="ep-memo-list">
+              <li>背八股</li>
+              <li>喝水</li>
+              <li>别慌</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -442,6 +605,7 @@ const examinerStyles = css`
   .op-card-header {
     padding: 14px 16px;
     border-bottom: 1px solid var(--chalk-weak);
+    font-family: var(--font-display);
     font-size: 15px;
     font-weight: 600;
     color: var(--chalk-bright);
@@ -815,7 +979,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   if (phase === 'config') {
     return (
       <div className="ep-wall">
-        <ScheduleSticker /><CountdownSticker />
+        <LeftBulletinBoard /><RightBulletinBoard />
         <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
           <CornerStar /><CornerLamp />
           <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
@@ -886,7 +1050,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   return (
     <div className="ep-wall">
-      <ScheduleSticker /><CountdownSticker />
+      <LeftBulletinBoard isExam /><RightBulletinBoard isExam />
       <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
       <CornerStar /><CornerLamp />
       <ChalkBox
@@ -899,7 +1063,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           <Space size={16}>
             <Target size={24} color="var(--chalk-yellow)" />
             <div>
-              <Title level={5} style={{ margin: 0, fontSize: 16, color: 'var(--chalk-bright)' }}>
+              <Title level={5} style={{ margin: 0, fontSize: 16, color: 'var(--chalk-bright)', fontFamily: 'var(--font-display)' }}>
                 模拟面试 · {state.question_index} / {MAX_QUESTIONS} 题
               </Title>
               <Text type="secondary" style={{ fontSize: 12, color: 'var(--chalk)' }}>
@@ -1005,10 +1169,10 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 style={{
                   color: 'var(--chalk-yellow)',
                   fontFamily: 'var(--font-pixel)',
-                  fontSize: 11,
+                  fontSize: 12,
                 }}
               >
-                {state.evaluation.score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 10 }}> / 10 分</span>
+                {state.evaluation.score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 11 }}> / 10 分</span>
               </span>
             </Space>
           </div>
@@ -1043,8 +1207,8 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
             <Space>
               <Flag size={18} color="var(--chalk-yellow)" />
               <span>面试总结</span>
-              <span className="op-tag" style={{ color: 'var(--chalk-yellow)', fontFamily: 'var(--font-pixel)', fontSize: 11 }}>
-                总体 {state.summary.total_score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 10 }}> / 100 分</span>
+              <span className="op-tag" style={{ color: 'var(--chalk-yellow)', fontFamily: 'var(--font-pixel)', fontSize: 12 }}>
+                总体 {state.summary.total_score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 11 }}> / 100 分</span>
               </span>
             </Space>
           </div>
@@ -1061,7 +1225,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
               width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
               border: '1.5px dashed var(--chalk-faint)', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
-              color: 'var(--chalk-faint)', fontSize: 10, fontFamily: 'var(--font-pixel)',
+              color: 'var(--chalk-faint)', fontSize: 11, fontFamily: 'var(--font-display)',
             }}>
               成绩章
             </div>
