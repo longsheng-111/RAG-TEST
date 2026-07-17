@@ -75,7 +75,7 @@ function scoreColor(score: number) {
 function ReferencePointsCard({ points }: { points: string[] }) {
   return (
     <div className="op-hint-box" style={{ marginBottom: 12 }}>
-      <Text strong style={{ fontSize: 12, color: 'var(--chalk-bright)' }}>参考答案要点</Text>
+      <Text strong style={{ fontSize: 12, color: 'var(--chalk-yellow)', letterSpacing: 0.5 }}>参考答案要点</Text>
       <ol style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--chalk)', lineHeight: 1.7 }}>
         {points.map((p, i) => (
           <li key={i}>{p}</li>
@@ -90,7 +90,7 @@ function PointsResultCard({ points }: { points?: ExamPoint[] }) {
   const hitCount = points.filter((p) => p.hit).length;
   return (
     <div style={{ marginTop: 14 }}>
-      <Text strong style={{ fontSize: 12, color: 'var(--chalk-bright)' }}>
+      <Text strong style={{ fontSize: 12, color: 'var(--chalk-yellow)', letterSpacing: 0.5 }}>
         要点命中 {hitCount} / {points.length}
       </Text>
       <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -99,22 +99,22 @@ function PointsResultCard({ points }: { points?: ExamPoint[] }) {
             key={i}
             className="op-point"
             style={{
-              borderColor: p.hit ? 'var(--cite-3)' : 'var(--cite-4)',
+              borderColor: p.hit ? 'var(--cite-3)' : 'var(--chalk-yellow)',
             }}
           >
             <Space size={6}>
               {p.hit ? (
                 <CheckCircle2 size={14} color="var(--cite-3)" />
               ) : (
-                <AlertTriangle size={14} color="var(--cite-4)" />
+                <AlertTriangle size={14} color="var(--chalk-yellow)" />
               )}
-              <Text style={{ color: 'var(--chalk-bright)', fontWeight: 500 }}>
+              <Text style={{ color: p.hit ? 'var(--chalk)' : 'var(--chalk-yellow)', fontWeight: 500 }}>
                 {p.hit ? '命中' : '未命中'}
               </Text>
             </Space>
             <div style={{ marginTop: 4, color: 'var(--chalk)' }}>{p.point}</div>
             {p.evidence && (
-              <div style={{ marginTop: 4, color: 'var(--chalk-faint)', fontSize: 11 }}>
+              <div style={{ marginTop: 4, color: 'var(--chalk-dim)', fontSize: 11 }}>
                 依据：{p.evidence}
               </div>
             )}
@@ -208,6 +208,7 @@ function EvaluationCard({ evaluation, onRetry }: { evaluation: ExamEvaluation; o
 // 考试页卡片独有的悬停上浮拆为 op-card-lift 修饰类；配置页头部内边距经
 // .op-card-header.ep-config-header 复合选择器保留 14px 24px，两页渲染与合并前一致。
 const examinerStyles = css`
+  /* ===== 根容器：黑板 + 木框 + 粉笔槽（纯 CSS） ===== */
   .ep-root {
     position: relative;
     color: var(--chalk);
@@ -216,8 +217,7 @@ const examinerStyles = css`
     border-bottom-width: 30px;
     box-shadow: inset 0 0 0 1.5px var(--chalk-weak);
   }
-  /* 粉笔槽：底部加高的墨色横档即槽体，槽内白/黄粉笔各一支（盒影复制同形），
-     板擦为深色小方块；纯静态伪元素，reduced-motion 无影响。 */
+  /* 粉笔槽凹槽暗线（边框底部内侧） */
   .ep-root::before {
     content: '';
     position: absolute;
@@ -228,10 +228,11 @@ const examinerStyles = css`
     border-radius: 4px;
     background: var(--chalk-bright);
     box-shadow:
-      64px 0 0 var(--cite-4),
+      64px 0 0 var(--chalk-yellow),
       0 0 0 1px rgba(0,0,0,0.35),
       64px 0 0 1px rgba(0,0,0,0.35);
   }
+  /* 板擦 */
   .ep-root::after {
     content: '';
     position: absolute;
@@ -243,17 +244,21 @@ const examinerStyles = css`
     background: var(--ink-secondary);
     box-shadow: 0 0 0 1px rgba(0,0,0,0.45);
   }
-  /* 粉笔槽凹槽暗线 */
-  .ep-root {
-    border-bottom-color: var(--ink);
-  }
   .ep-root::before,
   .ep-root::after {
     filter: drop-shadow(0 1px 0 rgba(0,0,0,0.3));
   }
+
+  /* ===== on-board 容器：重置文字上下文，杜绝 --ink 继承进黑板 ===== */
+  .ep-root,
+  .ep-root :global(*) {
+    /* 不强制 * 的子，只对直接文字容器生效；markdown 走下方全局规则 */
+  }
+
+  /* ===== 粉笔卡片（v1.5 统一制式） ===== */
   .op-card {
-    background: var(--board);
-    border: 1.5px solid var(--chalk-bright);
+    background: var(--board-deep);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     background-image:
       repeating-linear-gradient(0deg, var(--chalk-weak) 0 1px, transparent 1px 24px),
@@ -265,7 +270,7 @@ const examinerStyles = css`
   }
   .op-card-lift:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--chalk-bright);
+    box-shadow: 3px 3px 0 var(--chalk-dim);
   }
   .op-card-header {
     padding: 14px 16px;
@@ -285,50 +290,49 @@ const examinerStyles = css`
     font-size: 13px;
     font-weight: 400;
     letter-spacing: normal;
-    color: var(--chalk-faint);
+    color: var(--chalk-dim);
   }
+
+  /* ===== 粉笔静态标签 ===== */
   .ep-chalk-note {
     display: inline-flex;
     align-items: center;
     padding: 5px 10px;
-    border: 1.5px solid var(--chalk-faint);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 12px;
     color: var(--chalk);
   }
+
+  /* ===== 粉笔表单控件 ===== */
   .op-input {
-    border: 1.5px solid var(--chalk-faint) !important;
+    border: 1.5px solid var(--chalk-dim) !important;
     border-radius: 3px !important;
     background: transparent !important;
     color: var(--chalk-bright) !important;
-    transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-      box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
   }
-  .op-input::placeholder {
-    color: var(--chalk-faint) !important;
-  }
+  .op-input::placeholder { color: var(--chalk-dim) !important; }
   .op-input:focus {
-    border-color: var(--chalk-faint) !important;
-    outline: 2px solid var(--chalk-bright);
+    border-color: var(--chalk-dim) !important;
+    outline: 2px solid var(--chalk-yellow);
     outline-offset: 2px;
   }
   .ep-root :global(.ant-input) {
     background: transparent !important;
-    border-color: var(--chalk-faint) !important;
+    border-color: var(--chalk-dim) !important;
     color: var(--chalk-bright) !important;
   }
-  .ep-root :global(.ant-input::placeholder) {
-    color: var(--chalk-faint) !important;
-  }
-  .ep-root :global(.ant-input:hover) {
-    border-color: var(--chalk-bright) !important;
-  }
+  .ep-root :global(.ant-input::placeholder) { color: var(--chalk-dim) !important; }
+  .ep-root :global(.ant-input:hover) { border-color: var(--chalk-bright) !important; }
   .ep-root :global(.ant-input:focus) {
-    border-color: var(--chalk-faint) !important;
-    outline: 2px solid var(--chalk-bright);
+    border-color: var(--chalk-dim) !important;
+    outline: 2px solid var(--chalk-yellow);
     outline-offset: 2px;
     box-shadow: none !important;
   }
+
+  /* ===== 题目文字 ===== */
   .ep-question {
     font-size: 17px;
     line-height: 1.7;
@@ -338,15 +342,17 @@ const examinerStyles = css`
     max-width: 100%;
   }
   .ep-question p { color: var(--chalk-bright); overflow-wrap: anywhere; }
+
+  /* ===== 考察标签 chip ===== */
   .ep-expectation-tag {
     display: inline-flex;
     align-items: center;
     max-width: 260px;
     height: 22px;
     padding: 0 8px;
-    background: rgba(240, 237, 228, 0.08);
-    color: var(--chalk-bright);
-    border: 1.5px solid var(--chalk-bright);
+    background: rgba(0,0,0,0.15);
+    color: var(--chalk);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 12px;
     font-weight: 500;
@@ -363,12 +369,14 @@ const examinerStyles = css`
     overflow: hidden;
     position: relative;
   }
+
+  /* ===== 标签/徽标 ===== */
   .op-tag {
     display: inline-flex;
     align-items: center;
     height: 22px;
     padding: 0 8px;
-    border: 1.5px solid var(--chalk-bright);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 12px;
     font-weight: 500;
@@ -379,46 +387,49 @@ const examinerStyles = css`
     align-items: center;
     height: 22px;
     padding: 0 8px;
-    background: rgba(240, 237, 228, 0.08);
-    color: var(--chalk-bright);
-    border: 1.5px solid var(--chalk-bright);
+    background: rgba(0,0,0,0.15);
+    color: var(--chalk);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 12px;
     font-weight: 500;
   }
+
+  /* ===== 提示框（参考答案要点） ===== */
   .op-hint-box {
-    padding: 12px;
-    background: var(--board);
-    border: 1.5px solid rgba(240, 237, 228, 0.35);
+    padding: 14px 16px;
+    background: var(--board-deep);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
   }
+
+  /* ===== 文本域 ===== */
   .op-textarea {
     width: 100%;
     padding: 12px;
-    background: var(--board);
-    border: 1.5px solid var(--chalk-bright);
+    background: var(--board-deep);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 15px;
     line-height: 1.6;
     resize: none;
     outline: none;
     color: var(--chalk-bright);
-    transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-      box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
   }
   .op-textarea:focus {
-    border-color: var(--brand);
-    outline: 2px solid var(--brand);
+    border-color: var(--chalk-yellow);
+    outline: 2px solid var(--chalk-yellow);
     outline-offset: 2px;
   }
-  .op-textarea::placeholder {
-    color: var(--chalk-faint);
-  }
+  .op-textarea::placeholder { color: var(--chalk-dim); }
+
+  /* ===== 按钮体系 ===== */
   .op-btn {
     border-radius: 3px;
-    border: 1.5px solid var(--chalk-bright);
-    background: var(--board);
-    color: var(--chalk-bright);
+    border: 1.5px solid var(--chalk-dim);
+    background: var(--board-deep);
+    color: var(--chalk);
     transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
       box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
       border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -426,14 +437,16 @@ const examinerStyles = css`
       color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
   }
   .ep-root :global(.ant-btn).op-btn {
-    background: var(--board) !important;
-    border-color: var(--chalk-bright) !important;
-    color: var(--chalk-bright) !important;
+    background: var(--board-deep) !important;
+    border-color: var(--chalk-dim) !important;
+    color: var(--chalk) !important;
   }
   .op-btn:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--chalk-bright);
-    background: rgba(240, 237, 228, 0.08);
+    box-shadow: 3px 3px 0 var(--chalk-dim);
+    background: rgba(0,0,0,0.1);
+    border-color: var(--chalk-yellow);
+    color: var(--chalk-yellow);
   }
   .op-btn:active {
     transform: translate(0, 0);
@@ -441,24 +454,22 @@ const examinerStyles = css`
   }
   .op-btn-primary {
     background: var(--brand);
-    border-color: var(--chalk-bright);
+    border-color: var(--chalk-dim);
     color: #fff;
   }
   .ep-root :global(.ant-btn).op-btn-primary {
     background: var(--brand) !important;
-    border-color: var(--chalk-bright) !important;
+    border-color: var(--chalk-dim) !important;
     color: #fff !important;
   }
-  .op-btn-primary:hover {
-    background: var(--brand-hover);
-  }
+  .op-btn-primary:hover { background: var(--brand-hover); }
   .op-btn-primary:disabled {
-    background: rgba(240, 237, 228, 0.12);
+    background: rgba(0,0,0,0.12);
     color: var(--chalk-faint);
     border-color: var(--chalk-faint);
   }
   .ep-root :global(.ant-btn).op-btn-primary:disabled {
-    background: rgba(240, 237, 228, 0.12) !important;
+    background: rgba(0,0,0,0.12) !important;
     color: var(--chalk-faint) !important;
     border-color: var(--chalk-faint) !important;
   }
@@ -470,9 +481,7 @@ const examinerStyles = css`
     color: var(--brand) !important;
     border-color: var(--brand) !important;
   }
-  .op-btn-danger:hover {
-    background: rgba(200, 57, 43, 0.12);
-  }
+  .op-btn-danger:hover { background: rgba(200, 57, 43, 0.12); }
   .ep-root :global(.ant-btn).op-btn-danger:hover {
     background: rgba(200, 57, 43, 0.12) !important;
   }
@@ -491,45 +500,32 @@ const examinerStyles = css`
   }
   .op-btn-start:hover {
     transform: translate(-1px, -1px);
-    background: var(--chalk-bright);
     box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
   }
-  .ep-root :global(.ant-btn).op-btn-start:hover {
-    background: var(--chalk-bright) !important;
-    color: var(--ink) !important;
-    border-color: var(--ink) !important;
-    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25) !important;
-  }
-  .op-btn-start:active {
-    transform: translate(0, 0);
-    box-shadow: none;
-  }
-  .ep-root :global(.ant-btn).op-btn-start:active {
-    box-shadow: none !important;
-  }
+  .op-btn-start:active { transform: translate(0, 0); box-shadow: none; }
+  .ep-root :global(.ant-btn).op-btn-start:active { box-shadow: none !important; }
   .op-btn-start:disabled {
-    background: var(--chalk-weak);
+    background: rgba(0,0,0,0.12);
     border-color: var(--chalk-faint);
     color: var(--chalk-faint);
     box-shadow: none;
   }
   .ep-root :global(.ant-btn).op-btn-start:disabled {
-    background: var(--chalk-weak) !important;
+    background: rgba(0,0,0,0.12) !important;
     border-color: var(--chalk-faint) !important;
     color: var(--chalk-faint) !important;
     box-shadow: none !important;
   }
+
+  /* ===== 评分反馈结构化卡片 ===== */
   .ep-eval-section {
     margin-bottom: 14px;
   }
-  .ep-eval-section:last-child {
-    margin-bottom: 0;
-  }
+  .ep-eval-section:last-child { margin-bottom: 0; }
   .ep-eval-label {
     font-size: 12px;
     font-weight: 600;
-    color: var(--chalk-faint);
-    text-transform: uppercase;
+    color: var(--chalk-yellow);
     letter-spacing: 1px;
     margin-bottom: 6px;
   }
@@ -537,54 +533,52 @@ const examinerStyles = css`
     font-size: 14px;
     line-height: 1.7;
     color: var(--chalk);
+    padding-left: 10px;
+    border-left: 2px solid var(--chalk-dim);
   }
   .ep-eval-body p { color: var(--chalk); }
   .ep-eval-body strong { color: var(--chalk-bright); }
+
+  /* ===== 要点命中条目 ===== */
   .op-point {
     padding: 8px 10px;
-    border: 1.5px solid var(--chalk-bright);
+    border: 1.5px solid var(--chalk-dim);
     border-radius: 3px;
     font-size: 12px;
-    background: var(--board);
+    background: var(--board-deep);
   }
-  .ep-progress :global(.ant-progress-bg) {
-    background: var(--brand) !important;
-  }
+
+  /* ===== 进度条（品牌红保留为装饰性，仅进度条场景） ===== */
+  .ep-progress :global(.ant-progress-bg) { background: var(--brand) !important; }
   .ep-progress :global(.ant-progress-inner) {
-    background: rgba(240, 237, 228, 0.15) !important;
+    background: var(--chalk-weak) !important;
     border-radius: 3px !important;
   }
   .ep-progress :global(.ant-progress-bg) {
     border-radius: 3px !important;
     height: 8px !important;
   }
-  .ep-alert :global(.ant-alert-message) {
-    color: var(--chalk-bright) !important;
-  }
-  .ep-alert :global(.ant-alert-description) {
-    color: var(--chalk) !important;
-  }
-  .ep-alert :global(.ant-alert-icon) {
-    color: var(--brand) !important;
-  }
-  .ep-root :global(.ant-divider) {
-    border-color: var(--chalk-weak) !important;
-  }
+
+  /* ===== Alert / Divider ===== */
+  .ep-alert :global(.ant-alert-message) { color: var(--chalk-bright) !important; }
+  .ep-alert :global(.ant-alert-description) { color: var(--chalk) !important; }
+  .ep-alert :global(.ant-alert-icon) { color: var(--chalk-yellow) !important; }
+  .ep-root :global(.ant-divider) { border-color: var(--chalk-weak) !important; }
+
+  /* ===== Markdown 正文 ===== */
   .ep-root :global(.markdown-body) { color: var(--chalk); }
   .ep-root :global(.markdown-body) h1,
   .ep-root :global(.markdown-body) h2,
   .ep-root :global(.markdown-body) h3,
   .ep-root :global(.markdown-body) h4,
   .ep-root :global(.markdown-body) h5,
-  .ep-root :global(.markdown-body) h6 {
-    color: var(--chalk-bright);
-  }
+  .ep-root :global(.markdown-body) h6 { color: var(--chalk-bright); }
   .ep-root :global(.markdown-body) p { color: var(--chalk); }
   .ep-root :global(.markdown-body) strong { color: var(--chalk-bright); }
   .ep-root :global(.markdown-body) li { color: var(--chalk); }
   .ep-root :global(.markdown-body) code {
-    background: rgba(240, 237, 228, 0.12);
-    color: var(--chalk-bright);
+    background: rgba(0,0,0,0.15);
+    color: var(--chalk-yellow);
   }
   .ep-root :global(.markdown-body) pre {
     background: rgba(0, 0, 0, 0.25);
@@ -592,22 +586,19 @@ const examinerStyles = css`
   }
   .ep-root :global(.markdown-body) pre code { background: transparent; color: inherit; }
   .ep-root :global(.markdown-body) blockquote {
-    border-left-color: var(--brand);
-    background: rgba(200, 57, 43, 0.12);
+    border-left-color: var(--chalk-yellow);
+    background: rgba(240, 208, 96, 0.08);
     color: var(--chalk);
   }
-  .ep-root :global(.markdown-body) table {
-    border-color: var(--chalk-bright);
-  }
+  .ep-root :global(.markdown-body) table { border-color: var(--chalk-dim); }
   .ep-root :global(.markdown-body) th,
-  .ep-root :global(.markdown-body) td {
-    border-color: var(--chalk-weak);
-  }
+  .ep-root :global(.markdown-body) td { border-color: var(--chalk-weak); }
   .ep-root :global(.markdown-body) th {
-    background: rgba(240, 237, 228, 0.1);
+    background: rgba(0,0,0,0.15);
     color: var(--chalk-bright);
   }
   .ep-root :global(.markdown-body) td { color: var(--chalk); }
+
   @media (prefers-reduced-motion: reduce) {
     .op-card, .op-input, .op-btn, .op-textarea {
       transition: opacity 100ms ease;
@@ -709,7 +700,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           <div style={{ padding: 24 }}>
             <Space direction="vertical" size={20} style={{ width: '100%' }}>
               <div>
-                <Text style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, letterSpacing: 1, color: 'var(--cite-4)' }}>目标岗位</Text>
+                <Text style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, letterSpacing: 1, color: 'var(--chalk-yellow)' }}>目标岗位</Text>
                 <Input
                   className="op-input"
                   placeholder="例如：后端开发工程师"
@@ -719,7 +710,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 />
               </div>
               <div>
-                <Text style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, letterSpacing: 1, color: 'var(--cite-4)' }}>面试方向</Text>
+                <Text style={{ display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600, letterSpacing: 1, color: 'var(--chalk-yellow)' }}>面试方向</Text>
                 <Input
                   className="op-input"
                   placeholder="例如：Java 并发 / Redis / Vue 响应式"
@@ -759,7 +750,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
       <div className="op-card op-card-lift" style={{ marginBottom: 16, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <Space size={16}>
-            <Target size={24} color="var(--brand)" />
+            <Target size={24} color="var(--chalk-yellow)" />
             <div>
               <Title level={5} style={{ margin: 0, fontSize: 16, color: 'var(--chalk-bright)' }}>
                 模拟面试 · {state.question_index} / {MAX_QUESTIONS} 题
@@ -772,11 +763,11 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           </Space>
           <Space size={24} align="center">
             <div style={{ textAlign: 'right' }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', color: 'var(--chalk)' }}>当前均分</Text>
-              <Text strong style={{ fontSize: 24, fontFamily: 'var(--font-pixel)', color: 'var(--chalk-bright)', lineHeight: 1.2 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', color: 'var(--chalk-dim)' }}>当前均分</Text>
+              <Text strong style={{ fontSize: 24, fontFamily: 'var(--font-pixel)', color: 'var(--chalk-yellow)', lineHeight: 1.2 }}>
                 {avgScore.toFixed(1)}
               </Text>
-              <Text type="secondary" style={{ fontSize: 12, color: 'var(--chalk-faint)' }}> / 10</Text>
+              <Text type="secondary" style={{ fontSize: 12, color: 'var(--chalk-dim)' }}> / 10</Text>
             </div>
             <div style={{ width: 160 }}>
               <Progress
@@ -784,7 +775,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
                 percent={progressPercent}
                 size="small"
                 strokeColor="var(--brand)"
-                trailColor="rgba(240,237,228,0.15)"
+                trailColor="var(--chalk-weak)"
               />
             </div>
           </Space>
@@ -865,13 +856,12 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
               <span
                 className="op-tag"
                 style={{
-                  background: 'var(--board)',
-                  color: 'var(--chalk-bright)',
+                  color: 'var(--chalk-yellow)',
                   fontFamily: 'var(--font-pixel)',
                   fontSize: 11,
                 }}
               >
-                {state.evaluation.score} / 10 分
+                {state.evaluation.score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 10 }}> / 10 分</span>
               </span>
             </Space>
           </div>
@@ -904,10 +894,10 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
         <div className="op-card op-card-lift">
           <div className="op-card-header">
             <Space>
-              <Flag size={18} color="var(--cite-3)" />
+              <Flag size={18} color="var(--chalk-yellow)" />
               <span>面试总结</span>
-              <span className="op-tag" style={{ background: 'var(--board)', color: 'var(--chalk-bright)', fontFamily: 'var(--font-pixel)', fontSize: 11 }}>
-                总体 {state.summary.total_score} / 100 分
+              <span className="op-tag" style={{ color: 'var(--chalk-yellow)', fontFamily: 'var(--font-pixel)', fontSize: 11 }}>
+                总体 {state.summary.total_score}<span style={{ fontFamily: 'inherit', color: 'var(--chalk-dim)', fontSize: 10 }}> / 100 分</span>
               </span>
             </Space>
           </div>
@@ -917,9 +907,9 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
             </div>
             {state.weak_points && state.weak_points.length > 0 && (
               <>
-                <Divider style={{ borderColor: 'rgba(240,237,228,0.2)' }} />
+                <Divider style={{ borderColor: 'var(--chalk-weak)' }} />
                 <div>
-                  <Text strong style={{ fontSize: 13, color: 'var(--brand)' }}>
+                  <Text strong style={{ fontSize: 13, color: 'var(--chalk-yellow)' }}>
                     高频遗漏点
                   </Text>
                   <ul style={{ marginTop: 8, paddingLeft: 18, color: 'var(--chalk)', fontSize: 13, lineHeight: 1.7 }}>
