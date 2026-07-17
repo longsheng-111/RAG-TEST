@@ -15,7 +15,6 @@ import {
   Send,
   Trash2,
   FileText,
-  Inbox,
   Database,
   User,
   Bot,
@@ -93,7 +92,6 @@ interface Props {
 interface Cluster {
   key: string;
   label: string;
-  color: string;
   sources: Source[];
 }
 
@@ -111,15 +109,6 @@ interface PopupState {
 // ============================================================
 
 const SESSION_BUDGET = 50000;
-
-const CLUSTER_PALETTE = [
-  { color: '#ff6b6b', bg: '#fff1f0' },
-  { color: '#00c9a7', bg: '#e6faf6' },
-  { color: '#4a90e2', bg: '#edf4fd' },
-  { color: '#f59e0b', bg: '#fffbeb' },
-  { color: '#8b5cf6', bg: '#f5f3ff' },
-  { color: '#ec4899', bg: '#fdf2f8' },
-];
 
 const FLAG_OPTIONS = [
   { value: '引用不相关', label: '引用不相关' },
@@ -139,10 +128,9 @@ function clusterSources(sources: Source[]): Cluster[] {
     groups.get(s.file_name)!.push(s);
   });
 
-  return Array.from(groups.entries()).map(([fileName, group], idx) => ({
+  return Array.from(groups.entries()).map(([fileName, group]) => ({
     key: fileName,
     label: fileName,
-    color: CLUSTER_PALETTE[idx % CLUSTER_PALETTE.length].color,
     sources: group,
   }));
 }
@@ -316,6 +304,23 @@ function CitationPopup({
   );
 }
 
+interface CitationTextProps {
+  value: string;
+  sources: Source[];
+  msgIdx: number;
+  activeId?: string;
+  pinnedId?: string;
+  hoveredCiteIndex: number | null;
+  pulsingCitationIdx: number | null;
+  onDropReplace?: (fromSourceId: string, toCitationNum: number) => void;
+  citationOverrides?: Record<number, string>;
+  onRegisterCitation: (msgIdx: number, globalIdx: number, el: HTMLSpanElement) => void;
+  onUnregisterCitation: (msgIdx: number, globalIdx: number, el: HTMLSpanElement) => void;
+  onCitationEnter: (sourceId: string, globalIdx: number, el: HTMLSpanElement, citationNum: number, msgIdx: number) => void;
+  onCitationLeave: () => void;
+  onCitationClick: (sourceId: string, globalIdx: number, el: HTMLSpanElement, citationNum: number, msgIdx: number) => void;
+}
+
 function CitationText({
   value,
   sources,
@@ -331,22 +336,7 @@ function CitationText({
   onCitationEnter,
   onCitationLeave,
   onCitationClick,
-}: {
-  value: string;
-  sources: Source[];
-  msgIdx: number;
-  activeId?: string;
-  pinnedId?: string;
-  hoveredCiteIndex: number | null;
-  pulsingCitationIdx: number | null;
-  onDropReplace?: (fromSourceId: string, toCitationNum: number) => void;
-  citationOverrides?: Record<number, string>;
-  onRegisterCitation: (msgIdx: number, globalIdx: number, el: HTMLSpanElement) => void;
-  onUnregisterCitation: (msgIdx: number, globalIdx: number, el: HTMLSpanElement) => void;
-  onCitationEnter: (sourceId: string, globalIdx: number, el: HTMLSpanElement, citationNum: number, msgIdx: number) => void;
-  onCitationLeave: () => void;
-  onCitationClick: (sourceId: string, globalIdx: number, el: HTMLSpanElement, citationNum: number, msgIdx: number) => void;
-}) {
+}: CitationTextProps) {
   const parts = value.split(/(\[\^\d+\^\])/g);
 
   return (
@@ -399,6 +389,51 @@ function CitationText({
     </>
   );
 }
+
+// react-markdown v9 的 components 只覆盖元素节点（text 节点不经过自定义组件），
+// 因此在元素 children 层面把字符串子节点交给 CitationText 注入引用角标。
+// 注意：组件类型必须在模块级保持稳定——若在渲染中动态创建组件类型，
+// 每次渲染都会卸载重建整个 markdown 子树，使已捕获的锚点 DOM 脱离文档（浮层定位退化为 0,0）。
+// 所以引用相关 props 通过 Context 传递，组件类型保持模块级常量。
+const CitationPropsContext = React.createContext<Omit<CitationTextProps, 'value'> | null>(null);
+
+function CitationChildren({ children }: { children: React.ReactNode }) {
+  const ctx = React.useContext(CitationPropsContext);
+  if (!ctx) return <>{children}</>;
+  return (
+    <>
+      {React.Children.map(children, (child, i) =>
+        typeof child === 'string' ? (
+          <CitationText key={i} value={child} {...ctx} />
+        ) : (
+          child
+        )
+      )}
+    </>
+  );
+}
+
+const citedElement = (Tag: 'p' | 'li' | 'h1' | 'h2' | 'h3' | 'h4' | 'td' | 'th' | 'strong' | 'em') =>
+  function CitedElement(props: { children?: React.ReactNode }) {
+    return (
+      <Tag>
+        <CitationChildren>{props.children}</CitationChildren>
+      </Tag>
+    );
+  };
+
+const citationMarkdownComponents = {
+  p: citedElement('p'),
+  li: citedElement('li'),
+  h1: citedElement('h1'),
+  h2: citedElement('h2'),
+  h3: citedElement('h3'),
+  h4: citedElement('h4'),
+  td: citedElement('td'),
+  th: citedElement('th'),
+  strong: citedElement('strong'),
+  em: citedElement('em'),
+};
 
 function CitationSpan({
   className,
@@ -893,9 +928,6 @@ export default function QAPanel({
         persona: propsPersona, collection_name: collectionName,
       });
       const cost: TokenCost = res.data.token_cost;
-      if (!res.data.sources || res.data.sources.length === 0) {
-        console.warn('[QAPanel] 后端返回的 sources 为空，检索面板将为空白');
-      }
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: res.data.answer,
@@ -1006,7 +1038,6 @@ export default function QAPanel({
   };
 
   const budgetRatio = propsSessionTotal / SESSION_BUDGET;
-  const isOverBudget = budgetRatio >= 1;
   const budgetColor = budgetRatio < 0.5 ? 'var(--brand)' : budgetRatio < 0.8 ? 'var(--cite-3)' : 'var(--brand)';
   const tokenSegments = 20;
   const usedSegments = Math.min(Math.ceil(budgetRatio * tokenSegments), tokenSegments);
@@ -1132,27 +1163,6 @@ export default function QAPanel({
       position: 'relative',
     }}>
       <style>{`
-        .qa-panel-root {
-          --bg-paper: #F7EDD8;
-          --bg-panel: #FFFBF0;
-          --bg-sunken: #F0E3C6;
-          --ink: #2B2419;
-          --ink-secondary: #6B5F4C;
-          --ink-faint: #A3937A;
-          --brand: #C8392B;
-          --brand-hover: #A92E22;
-          --brand-soft: #F6DFC8;
-          --cite-1: #2F9BE8;
-          --cite-2: #8B5CF6;
-          --cite-3: #7CB518;
-          --cite-4: #E5A50A;
-          --cite-5: #E85D9E;
-          --cite-6: #18A999;
-          --radius: 3px;
-          --ease-hard: cubic-bezier(0.25, 0.8, 0.25, 1);
-          --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
         /* Toolbar */
         .qa-toolbar {
           background: var(--bg-panel);
@@ -1180,7 +1190,7 @@ export default function QAPanel({
         }
         .qa-persona-sticker:nth-of-type(even) { transform: rotate(2deg); }
         .qa-persona-sticker:hover {
-          transform: rotate(0deg) translate(-1px, -2px);
+          transform: rotate(0deg) translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
         }
         .qa-kb-select {
@@ -1254,7 +1264,7 @@ export default function QAPanel({
           background-size: 20px 20px, 20px 20px, 100% 100%;
           border: 1.5px solid var(--ink);
           border-radius: var(--radius);
-          transition: border-color 150ms var(--ease-hard);
+          transition: border-color 150ms var(--ease-base);
         }
         .qa-composer:focus-within {
           border-color: var(--brand);
@@ -1265,7 +1275,7 @@ export default function QAPanel({
           border-radius: var(--radius) !important;
           box-shadow: 2px 2px 0 var(--ink) !important;
           color: #fff !important;
-          transition: transform 100ms var(--ease-hard), box-shadow 100ms var(--ease-hard), background 150ms var(--ease-hard) !important;
+          transition: transform 100ms var(--ease-base), box-shadow 100ms var(--ease-base), background 150ms var(--ease-base) !important;
         }
         .qa-send-btn.ant-btn-primary svg {
           color: #fff !important;
@@ -1335,7 +1345,7 @@ export default function QAPanel({
           overflow: hidden;
           width: 240px;
           min-width: 240px;
-          transition: width 200ms var(--ease-hard), min-width 200ms var(--ease-hard);
+          transition: width 200ms var(--ease-base), min-width 200ms var(--ease-base);
         }
         .qa-retrieval-panel.collapsed {
           width: 44px;
@@ -1374,13 +1384,17 @@ export default function QAPanel({
           border-radius: var(--radius);
           cursor: pointer;
           color: var(--ink-secondary);
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard), color 150ms var(--ease-hard);
+          transition: transform 150ms var(--ease-base), box-shadow 150ms var(--ease-base), color 150ms var(--ease-base);
           padding: 0;
         }
         .qa-panel-toggle:hover {
           transform: translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
           color: var(--brand);
+        }
+        .qa-panel-toggle:active {
+          transform: translate(0, 0);
+          box-shadow: none;
         }
         .qa-source-filter {
           min-width: 110px;
@@ -1456,11 +1470,15 @@ export default function QAPanel({
           border: 1.5px solid var(--ink);
           background: var(--bg-panel);
           cursor: pointer;
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard), background 150ms var(--ease-hard);
+          transition: transform 150ms var(--ease-base), box-shadow 150ms var(--ease-base), background 150ms var(--ease-base);
         }
         .qa-source:hover {
           transform: translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
+        }
+        .qa-source:active {
+          transform: translate(0, 0);
+          box-shadow: none;
         }
         .qa-source-active {
           border-color: var(--ink) !important;
@@ -1508,11 +1526,15 @@ export default function QAPanel({
           border: 1.5px solid var(--ink);
           flex-shrink: 0;
           cursor: pointer;
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard);
+          transition: transform 150ms var(--ease-base), box-shadow 150ms var(--ease-base);
         }
         .qa-source-id:hover {
           transform: translate(-1px, -1px);
           box-shadow: 2px 2px 0 var(--ink);
+        }
+        .qa-source-id:active {
+          transform: translate(0, 0);
+          box-shadow: none;
         }
         .qa-source-file {
           font-size: 11px;
@@ -1633,12 +1655,16 @@ export default function QAPanel({
           cursor: pointer;
           border: 1.5px solid var(--ink);
           transform: rotate(var(--citation-rotation, 0deg));
-          transition: transform 200ms var(--ease-pop), box-shadow 150ms var(--ease-hard);
+          transition: transform 200ms var(--ease-pop), box-shadow 150ms var(--ease-base);
           user-select: none;
         }
         .qa-citation:hover {
           transform: rotate(0deg) translate(-1px, -1px);
           box-shadow: 3px 3px 0 var(--ink);
+        }
+        .qa-citation:active {
+          transform: rotate(0deg) translate(0, 0);
+          box-shadow: none;
         }
         .qa-citation-active,
         .qa-citation-pinned {
@@ -1718,12 +1744,16 @@ export default function QAPanel({
           color: var(--ink-secondary);
           font-size: 10px;
           padding: 0;
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard), color 150ms var(--ease-hard);
+          transition: transform 150ms var(--ease-base), box-shadow 150ms var(--ease-base), color 150ms var(--ease-base);
         }
         .qa-citation-popup-close:hover {
           transform: translate(-1px, -1px);
           box-shadow: 2px 2px 0 var(--ink);
           color: var(--brand);
+        }
+        .qa-citation-popup-close:active {
+          transform: translate(0, 0);
+          box-shadow: none;
         }
         .qa-citation-popup-body {
           padding: 10px 12px;
@@ -1767,7 +1797,7 @@ export default function QAPanel({
           font-size: 13px;
           color: var(--ink);
           background: var(--bg-sunken);
-          transition: background 150ms var(--ease-hard);
+          transition: background 150ms var(--ease-base);
         }
         .qa-reasoning-summary:hover {
           background: var(--bg-panel);
@@ -1856,7 +1886,7 @@ export default function QAPanel({
         }
         .qa-feedback-btn {
           color: var(--ink-secondary) !important;
-          transition: transform 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard), color 150ms var(--ease-hard) !important;
+          transition: transform 150ms var(--ease-base), box-shadow 150ms var(--ease-base), color 150ms var(--ease-base) !important;
         }
         .qa-feedback-btn:hover {
           color: var(--brand) !important;
@@ -1946,7 +1976,7 @@ export default function QAPanel({
           border: 1.5px solid transparent;
           background: var(--bg-panel);
           cursor: pointer;
-          transition: background 150ms var(--ease-hard), border-color 150ms var(--ease-hard), box-shadow 150ms var(--ease-hard);
+          transition: background 150ms var(--ease-base), border-color 150ms var(--ease-base), box-shadow 150ms var(--ease-base);
         }
         .qa-replace-card:hover {
           border-color: rgba(43,36,25,0.25);
@@ -2256,6 +2286,21 @@ export default function QAPanel({
                   {messages.map((msg, idx) => {
                     const isLastAssistant = idx === lastAssistantIdx && msg.role === 'assistant';
                     const clusters = msg.sources ? clusterSources(msg.sources) : [];
+                    const citeProps = {
+                      sources: msg.sources || [],
+                      msgIdx: idx,
+                      activeId: activeCitationId,
+                      pinnedId: pinnedCitationId,
+                      hoveredCiteIndex,
+                      pulsingCitationIdx,
+                      onDropReplace: isLastAssistant ? handleDropReplace : undefined,
+                      citationOverrides: citationOverrides[idx] || {},
+                      onRegisterCitation: registerCitation,
+                      onUnregisterCitation: unregisterCitation,
+                      onCitationEnter: handleCitationEnter,
+                      onCitationLeave: handleCitationLeave,
+                      onCitationClick: handleCitationClick,
+                    };
 
                     if (msg.role === 'user') {
                       return (
@@ -2341,30 +2386,11 @@ export default function QAPanel({
 
                         <div className="qa-answer-body">
                           <div className="markdown-body">
-                            <ReactMarkdown
-                              components={{
-                                text: (props: any) => (
-                                  <CitationText
-                                    value={props.value || props.children}
-                                    sources={msg.sources || []}
-                                    msgIdx={idx}
-                                    activeId={activeCitationId}
-                                    pinnedId={pinnedCitationId}
-                                    hoveredCiteIndex={hoveredCiteIndex}
-                                    pulsingCitationIdx={pulsingCitationIdx}
-                                    onDropReplace={isLastAssistant ? handleDropReplace : undefined}
-                                    citationOverrides={citationOverrides[idx] || {}}
-                                    onRegisterCitation={registerCitation}
-                                    onUnregisterCitation={unregisterCitation}
-                                    onCitationEnter={handleCitationEnter}
-                                    onCitationLeave={handleCitationLeave}
-                                    onCitationClick={handleCitationClick}
-                                  />
-                                ),
-                              }}
-                            >
-                              {msg.content}
-                            </ReactMarkdown>
+                            <CitationPropsContext.Provider value={citeProps}>
+                              <ReactMarkdown components={citationMarkdownComponents}>
+                                {msg.content}
+                              </ReactMarkdown>
+                            </CitationPropsContext.Provider>
                           </div>
                         </div>
 
