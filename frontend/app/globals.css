@@ -866,3 +866,84 @@ h4 { font-size: 14px; }
     transition: opacity 100ms ease;
   }
 }
+
+/* ============================================================
+   Blackboard (.ep-root) — chalk text context（v1.5 根治串色）
+   原理：全局 h1-h6 / body 等元素选择器在 globals.css 中直设
+   var(--ink)，特异度 (0,0,1)；.ep-root 前缀规则特异度 (0,1,1)
+   以上，从源头杜绝作业本墨色泄漏进黑板场景。
+   本段放入 globals.css 而非 styled-jsx，因 ReactMarkdown 渲染
+   的子元素不带 styled-jsx 作用域 hash，裸写 .ep-root p 会静默
+   不生效；统一在全局样式表以 .ep-root 前缀覆盖最为可靠。
+   ============================================================ */
+
+/* ---- 元素级文字色重置 ---- */
+.ep-root h1, .ep-root h2, .ep-root h3,
+.ep-root h4, .ep-root h5, .ep-root h6 {
+  color: var(--chalk);           /* 正文 · on #2E4A3D ≈ 8.3:1 */
+  font-weight: 700;              /* 字重区分层级，不用色 */
+}
+.ep-root p { color: var(--chalk); }                     /* 正文段落 */
+.ep-root strong, .ep-root b { color: var(--chalk-yellow); } /* 强调 · 6.4:1 */
+.ep-root em, .ep-root i { color: var(--chalk-yellow); font-style: normal; } /* 项目禁 italic */
+.ep-root a { color: var(--chalk-yellow); text-decoration: underline; }
+.ep-root li { color: var(--chalk); }
+.ep-root hr { border-color: var(--chalk-weak); }
+
+/* ---- 板内工具类黑板变体（覆盖纸底默认） ---- */
+.ep-root .op-hint-box {
+  background: var(--board-deep);
+  border-color: var(--chalk-dim);
+}
+.ep-root .op-point {
+  background: var(--board-deep);
+  border-color: var(--chalk-dim);
+}
+
+/* ---- 板内 markdown 富文本全覆盖 ---- */
+.ep-root .markdown-body { color: var(--chalk); }
+.ep-root .markdown-body h1,
+.ep-root .markdown-body h2,
+.ep-root .markdown-body h3,
+.ep-root .markdown-body h4,
+.ep-root .markdown-body h5,
+.ep-root .markdown-body h6 { color: var(--chalk); font-weight: 700; }
+.ep-root .markdown-body p { color: var(--chalk); }
+.ep-root .markdown-body strong,
+.ep-root .markdown-body b { color: var(--chalk-yellow); }
+.ep-root .markdown-body em,
+.ep-root .markdown-body i { color: var(--chalk-yellow); font-style: normal; }
+.ep-root .markdown-body a { color: var(--chalk-yellow); text-decoration: underline; }
+.ep-root .markdown-body li { color: var(--chalk); }
+.ep-root .markdown-body code {
+  background: rgba(0,0,0,0.18);
+  color: var(--chalk-yellow);
+}
+.ep-root .markdown-body pre {
+  background: rgba(0,0,0,0.25);
+  color: var(--chalk-bright);
+}
+.ep-root .markdown-body pre code { background: transparent; color: inherit; }
+.ep-root .markdown-body blockquote {
+  border-left-color: var(--chalk-dim);
+  background: rgba(240,208,96,0.06);
+  color: var(--chalk);
+}
+.ep-root .markdown-body hr { border-color: var(--chalk-weak); }
+.ep-root .markdown-body table { border-color: var(--chalk-dim); }
+.ep-root .markdown-body th,
+.ep-root .markdown-body td { border-color: var(--chalk-weak); }
+.ep-root .markdown-body th {
+  background: rgba(0,0,0,0.15);
+  color: var(--chalk-bright);
+}
+.ep-root .markdown-body td { color: var(--chalk); }
+
+/* ---- antd 组件黑板上下文 ---- */
+.ep-root .ant-alert-icon { color: var(--chalk-yellow) !important; }
+.ep-root .ant-divider { border-color: var(--chalk-weak) !important; }
+.ep-root .ant-progress-bg { background: var(--brand) !important; }
+.ep-root .ant-progress-inner {
+  background: var(--chalk-weak) !important;
+  border-radius: 3px !important;
+}

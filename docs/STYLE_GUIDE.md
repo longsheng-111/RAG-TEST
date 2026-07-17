@@ -95,7 +95,7 @@
 | `--chalk-yellow` | `#F0D060` | **6.4:1** AA | **新增。** 强调/标签/分数。配置页 label、评分区段标签、命中/未命中徽标、像素分数。同限黑板场景。 |
 | `--chalk-faint` | `#A09B8E` | **3.5:1** | 辅助信息/禁用态。≥3:1，**禁用于正文**（仅限高分/标注类短文字 ≤12px 辅助标注）。同限黑板场景。 |
 | `--chalk-weak` | `rgba(240,237,228,0.12)` | —（装饰性） | 分隔线/木框内侧纹理/粉笔格纹理。纯装饰，不承载信息。同限黑板场景。 |
-| `--board-deep` | `#253E32` | —（底色） | **新增。** 板面卡片底色。比板面 `#2E4A3D` 深约 8%，用于 `--board` 场景内嵌卡（`.op-card`、`.op-hint-box`、`.op-textarea`、`.op-point`），形成板上嵌板的层次。同限黑板场景。 |
+| `--board-deep` | `#253E32` | —（底色，上文字 `--chalk` 9.9:1 / `--chalk-yellow` 7.7:1） | **新增。** 板面卡片底色。比板面 `#2E4A3D` 深约 8%，用于 `--board` 场景内嵌卡（`.op-card`、`.op-hint-box`、`.op-textarea`、`.op-point`），形成板上嵌板的层次。同限黑板场景。 |
 
 **容器规则（v1.5）**：
 - 黑板场景所有内容走粉笔色组，**禁止**纸底 token（`--ink`/`--ink-secondary`/`--bg-panel`/`--bg-paper`）出现在 `--board` 底之上。
@@ -201,6 +201,20 @@
 - c) **黑板主按钮**：✅ 正确：粉笔白底（`var(--chalk-bright)`）+ 1.5px `var(--ink)` 描边 + 硬阴影（阶梯见 3.3），按压模型沿用 4.1 定稿（hover `translate(-1px,-1px)` + 阴影抬升 / active `translate(0,0)` 无阴影）；宽度收窄随内容，不横贯全宽。❌ 错误：品牌红主按钮上黑板（红绿相撞发脏）；全宽通栏；模糊阴影。
 - d) **配置页标题**：✅ 正确：22-24px `var(--font-display)` `var(--chalk-bright)`，去 antd 图标，配一行 `var(--chalk-faint)` 副标题"考官已就位，先填考点"。❌ 错误：antd Typography 默认标题带图标；退回系统字（报告 1.9 同类问题）。
 - e) **假控件退役**（体检 3.6 修复）：✅ 正确："本场 5 题 · 单题最多追问 2 次"为静态粉笔标签——不可点、无 hover 态、无控件语义。❌ 错误：单选项且 `disabled` 的 `Segmented` 一类伪控件；任何不可交互元素伪装成控件。
+- f) **板内 Markdown 元素色阶（v1.5 根治串色）**：黑板场景内的富文本元素（ReactMarkdown 渲染的 h1-h6 / p / strong / em / a / code / blockquote / li / hr）必须全部显式指定粉笔色系，因为 globals.css 中的 `h1-h6 { color: var(--ink) }` 等元素选择器（特异度 0,0,1）会覆盖容器级 `color: var(--chalk)` 的继承。规则实现在 `globals.css` 的 `.ep-root` 前缀段（特异度 0,1,1 以上），覆盖清单如下：
+
+| 元素 | 前景色 | on `#2E4A3D` | 备注 |
+|------|--------|-------------|------|
+| h1-h6 | `--chalk` #F0EDE4 | 8.3:1 | `font-weight: 700` 区分层级，不用色 |
+| p / li | `--chalk` #F0EDE4 | 8.3:1 | 正文 |
+| strong / b | `--chalk-yellow` #F0D060 | 6.4:1 | 强调 |
+| em / i | `--chalk-yellow` #F0D060 | 6.4:1 | `font-style: normal`（项目禁 italic） |
+| a | `--chalk-yellow` #F0D060 + underline | 6.4:1 | 链接 |
+| code | `--chalk-yellow` #F0D060 + `rgba(0,0,0,0.18)` 底 | 6.4:1 | 行内代码 |
+| blockquote | `--chalk` #F0EDE4 + `--chalk-dim` 左边条 | 8.3:1 | 引用块 |
+| hr | `--chalk-weak` | — | 装饰分割线 |
+
+- g) **板内工具类黑板变体（v1.5）**：纸底场景定义的 `.op-hint-box`（`background: var(--bg-sunken)` 米黄底）、`.op-point`（`background: var(--bg-panel)` 白底）等工具类在 `.ep-root` 内必须重置为粉笔色系。规则：`.ep-root .op-hint-box { background: var(--board-deep); border-color: var(--chalk-dim); }`，特异度 (0,2,0) 压倒全局 (0,1,0)。**黑板上禁止米黄/白色卡片底——板内一切内容使用粉笔语言。**
 
 批次二预告【目标态】：答题页粉笔卡片统一、像素字体分数、成绩单版式、考场规则板书装饰、考试页标题字体统一（深化项 A1 收口，本批次不做）。
 

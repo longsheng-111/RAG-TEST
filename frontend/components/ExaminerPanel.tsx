@@ -548,56 +548,9 @@ const examinerStyles = css`
     background: var(--board-deep);
   }
 
-  /* ===== 进度条（品牌红保留为装饰性，仅进度条场景） ===== */
-  .ep-progress :global(.ant-progress-bg) { background: var(--brand) !important; }
-  .ep-progress :global(.ant-progress-inner) {
-    background: var(--chalk-weak) !important;
-    border-radius: 3px !important;
-  }
-  .ep-progress :global(.ant-progress-bg) {
-    border-radius: 3px !important;
-    height: 8px !important;
-  }
+  /* 进度条 → 见 globals.css .ep-root 段 */
 
-  /* ===== Alert / Divider ===== */
-  .ep-alert :global(.ant-alert-message) { color: var(--chalk-bright) !important; }
-  .ep-alert :global(.ant-alert-description) { color: var(--chalk) !important; }
-  .ep-alert :global(.ant-alert-icon) { color: var(--chalk-yellow) !important; }
-  .ep-root :global(.ant-divider) { border-color: var(--chalk-weak) !important; }
-
-  /* ===== Markdown 正文 ===== */
-  .ep-root :global(.markdown-body) { color: var(--chalk); }
-  .ep-root :global(.markdown-body) h1,
-  .ep-root :global(.markdown-body) h2,
-  .ep-root :global(.markdown-body) h3,
-  .ep-root :global(.markdown-body) h4,
-  .ep-root :global(.markdown-body) h5,
-  .ep-root :global(.markdown-body) h6 { color: var(--chalk-bright); }
-  .ep-root :global(.markdown-body) p { color: var(--chalk); }
-  .ep-root :global(.markdown-body) strong { color: var(--chalk-bright); }
-  .ep-root :global(.markdown-body) li { color: var(--chalk); }
-  .ep-root :global(.markdown-body) code {
-    background: rgba(0,0,0,0.15);
-    color: var(--chalk-yellow);
-  }
-  .ep-root :global(.markdown-body) pre {
-    background: rgba(0, 0, 0, 0.25);
-    color: var(--chalk-bright);
-  }
-  .ep-root :global(.markdown-body) pre code { background: transparent; color: inherit; }
-  .ep-root :global(.markdown-body) blockquote {
-    border-left-color: var(--chalk-yellow);
-    background: rgba(240, 208, 96, 0.08);
-    color: var(--chalk);
-  }
-  .ep-root :global(.markdown-body) table { border-color: var(--chalk-dim); }
-  .ep-root :global(.markdown-body) th,
-  .ep-root :global(.markdown-body) td { border-color: var(--chalk-weak); }
-  .ep-root :global(.markdown-body) th {
-    background: rgba(0,0,0,0.15);
-    color: var(--chalk-bright);
-  }
-  .ep-root :global(.markdown-body) td { color: var(--chalk); }
+  /* Alert / Divider / Progress / Markdown 元素覆盖 → 见 globals.css .ep-root 段 */
 
   @media (prefers-reduced-motion: reduce) {
     .op-card, .op-input, .op-btn, .op-textarea {
