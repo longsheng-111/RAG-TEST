@@ -28,6 +28,10 @@
   --chalk-weak: rgba(240,237,228,0.12);  /* 分隔线/纹理 · 装饰性 */
   --board-deep: #253E32;      /* 板面卡片底色 · 比板面深约 8%，on-board 容器内嵌卡底 */
 
+  /* ---- Classroom narrative (v1.6·批次二) ---- */
+  --wall-paper: #F2E6CC;       /* 板外墙面底色（纸色系浅调） */
+  --sticky-yellow: #FEF3C7;    /* 便利贴黄（--cite-4 浅调派生） */
+
   --cite-1: #2F9BE8;
   --cite-2: #8B5CF6;
   --cite-3: #7CB518;
@@ -878,6 +882,58 @@ h4 { font-size: 14px; }
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ============================================================
+   教室叙事 · 板外墙面（v1.6·批次二）
+   纸面世界容器：米黄底 + 竖向细条纹，板外两侧贴纸
+   1280px 以下隐藏贴纸（不挤压主区）
+   ============================================================ */
+.ep-wall {
+  position: relative;
+  min-height: 100%;
+  background: var(--bg-paper);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(43,36,25,0.03) 0 1px, transparent 1px 40px);
+}
+
+/* 墙面贴纸通用 */
+.ep-wall-sticker {
+  position: absolute;
+  z-index: 2;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--bg-panel);
+  pointer-events: none;
+  user-select: none;
+}
+.ep-wall-sticker--left {
+  left: 12px;
+  top: 20px;
+  transform: rotate(-2deg);
+}
+.ep-wall-sticker--right {
+  right: 12px;
+  top: 20px;
+  background: var(--sticky-yellow, #FEF3C7);
+  transform: rotate(2deg);
+}
+
+/* 胶带贴角 */
+.sticker-tape {
+  position: absolute;
+  width: 16px;
+  height: 10px;
+  background: rgba(255, 251, 240, 0.6);
+  border: 0.5px solid rgba(43, 36, 25, 0.12);
+  z-index: 1;
+}
+
+/* 1280px 以下隐藏贴纸 */
+@media (max-width: 1280px) {
+  .ep-wall-sticker { display: none; }
 }
 
 /* ============================================================

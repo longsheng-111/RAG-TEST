@@ -177,6 +177,51 @@ function CornerLamp() {
 
 /** 粉笔盒与角花共享样式 → 移入 globals.css .ep-root 段 */
 
+/* ============================================================
+   教室叙事 · 板外墙面贴纸（v1.6·批次二）
+   ============================================================ */
+/** 左侧课程表贴纸 */
+function ScheduleSticker() {
+  return (
+    <div className="ep-wall-sticker ep-wall-sticker--left" aria-hidden="true">
+      {/* 胶带贴角 */}
+      <div className="sticker-tape" style={{ top: -4, left: 16 }} />
+      <div className="sticker-tape" style={{ bottom: -4, right: 12 }} />
+      {/* 课程表内容 */}
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--ink)', textAlign: 'center', marginBottom: 6 }}>
+        今日课表
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, color: 'var(--ink-secondary)', fontFamily: 'var(--font-display)' }}>
+        <tbody>
+          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第1节</td><td style={{ borderBottom: '1px solid var(--border)' }}>概念题</td></tr>
+          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第2节</td><td style={{ borderBottom: '1px solid var(--border)' }}>原理题</td></tr>
+          <tr><td style={{ padding: '2px 4px', borderBottom: '1px solid var(--border)' }}>第3节</td><td style={{ borderBottom: '1px solid var(--border)' }}>对比题</td></tr>
+          <tr><td style={{ padding: '2px 4px' }}>第4节</td><td>场景题</td></tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** 右侧倒计时便利贴 */
+function CountdownSticker() {
+  return (
+    <div className="ep-wall-sticker ep-wall-sticker--right" aria-hidden="true">
+      <div className="sticker-tape" style={{ top: -4, left: 14 }} />
+      <div className="sticker-tape" style={{ bottom: -4, right: 14 }} />
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--ink)', textAlign: 'center' }}>
+        距离面试还有
+      </div>
+      <div style={{ fontFamily: 'var(--font-pixel)', fontSize: 18, color: 'var(--brand)', textAlign: 'center', margin: '6px 0' }}>
+        ? 天
+      </div>
+      <div style={{ fontSize: 9, color: 'var(--ink-faint)', textAlign: 'center' }}>
+        认真准备 · 全力以赴
+      </div>
+    </div>
+  );
+}
+
 function scoreColor(score: number) {
   // 黑板场景：品牌红不上绿底，改用粉笔色阶
   if (score >= 7) return 'var(--cite-3)';
@@ -759,9 +804,11 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   if (phase === 'config') {
     return (
-      <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
-        <CornerStar /><CornerLamp />
-        <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
+      <div className="ep-wall">
+        <ScheduleSticker /><CountdownSticker />
+        <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
+          <CornerStar /><CornerLamp />
+          <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
         <div className="op-card">
           <div className="op-card-header ep-config-header">
             <span>配置模拟面试</span>
@@ -821,13 +868,16 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
         </div>
         <style jsx>{examinerStyles}</style>
       </div>
+      </div>
     );
   }
 
   if (!state) return <Spin style={{ margin: '40px auto', display: 'block' }} />;
 
   return (
-    <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
+    <div className="ep-wall">
+      <ScheduleSticker /><CountdownSticker />
+      <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
       <CornerStar /><CornerLamp />
       <ChalkBox
         wholeCount={Math.max(0, MAX_QUESTIONS - (state?.scores?.length || 0))}
@@ -1040,6 +1090,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
       )}
 
       <style jsx>{examinerStyles}</style>
+    </div>
     </div>
   );
 }
