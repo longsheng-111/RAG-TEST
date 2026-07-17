@@ -19,15 +19,6 @@ interface SidebarProps {
   onMenuChange: (key: MenuKey) => void;
 }
 
-/* Retro workbook palette (local fallback until global tokens land) */
-const INK = '#2B2419';
-const INK_SECONDARY = '#6B5F4C';
-const PANEL = '#FFFBF0';
-const PAPER = '#F7EDD8';
-const SUNKEN = '#EDE1C8';
-const BRAND = '#C8392B';
-const BRAND_SOFT = '#F6DFC8';
-
 const menuItems = [
   { key: 'qa', icon: <MessageSquare size={18} />, label: '知识问答' },
   { key: 'knowledge-base', icon: <Database size={18} />, label: '知识库管理' },
@@ -50,8 +41,8 @@ export default function Sidebar({
       collapsedWidth={60}
       className="dx-sidebar"
       style={{
-        background: PANEL,
-        borderRight: `1.5px solid ${INK}`,
+        background: 'var(--bg-panel)',
+        borderRight: '1.5px solid var(--ink)',
         boxShadow: 'none',
       }}
     >
@@ -62,7 +53,7 @@ export default function Sidebar({
         flexDirection: 'column',
         overflow: 'hidden',
         position: 'relative',
-        background: PANEL,
+        background: 'var(--bg-panel)',
       }}>
         {/* Brand */}
         <div
@@ -74,7 +65,7 @@ export default function Sidebar({
             justifyContent: collapsed ? 'center' : 'flex-start',
             gap: collapsed ? 0 : 12,
             borderBottom: '1px solid rgba(43, 36, 25, 0.15)',
-            background: PANEL,
+            background: 'var(--bg-panel)',
           }}
         >
           <div
@@ -83,8 +74,8 @@ export default function Sidebar({
               width: 36,
               height: 36,
               borderRadius: 3,
-              background: BRAND,
-              border: `1.5px solid ${INK}`,
+              background: 'var(--brand)',
+              border: '1.5px solid var(--ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -101,7 +92,7 @@ export default function Sidebar({
               <div
                 className="sidebar-brand-text"
                 style={{
-                  color: INK,
+                  color: 'var(--ink)',
                   fontSize: 16,
                   fontWeight: 700,
                   letterSpacing: '-0.3px',
@@ -113,7 +104,7 @@ export default function Sidebar({
               <div
                 className="sidebar-brand-sub"
                 style={{
-                  color: INK_SECONDARY,
+                  color: 'var(--ink-secondary)',
                   fontSize: 10,
                   letterSpacing: '1.2px',
                   textTransform: 'uppercase',
@@ -162,15 +153,15 @@ export default function Sidebar({
               width: '100%',
               height: 32,
               borderRadius: 3,
-              border: `1.5px solid ${INK}`,
-              background: PANEL,
-              color: INK_SECONDARY,
+              border: '1.5px solid var(--ink)',
+              background: 'var(--bg-panel)',
+              color: 'var(--ink-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 200ms cubic-bezier(0.25, 0.8, 0.25, 1)',
-              boxShadow: `2px 2px 0 ${INK}`,
+              boxShadow: '2px 2px 0 var(--ink)',
             }}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -184,21 +175,21 @@ export default function Sidebar({
           border-inline-end: none !important;
         }
         .dx-sidebar .ant-menu-item {
-          color: ${INK_SECONDARY} !important;
+          color: var(--ink-secondary) !important;
           border-radius: 3px !important;
           margin: 4px 0 !important;
           border: 1.5px solid transparent !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
         .dx-sidebar .ant-menu-item:hover {
-          color: ${INK} !important;
-          background: ${SUNKEN} !important;
-          border-color: ${INK} !important;
+          color: var(--ink) !important;
+          background: var(--bg-sunken) !important;
+          border-color: var(--ink) !important;
         }
         .dx-sidebar .ant-menu-item-selected {
-          color: ${INK} !important;
-          background: ${BRAND_SOFT} !important;
-          border-color: ${INK} !important;
+          color: var(--ink) !important;
+          background: var(--brand-soft) !important;
+          border-color: var(--ink) !important;
           font-weight: 600 !important;
         }
         .dx-sidebar .ant-menu-item-selected::after {
@@ -209,9 +200,9 @@ export default function Sidebar({
         }
         .dx-sidebar-collapse:hover {
           transform: translate(-1px, -1px) !important;
-          box-shadow: 3px 3px 0 ${INK} !important;
-          color: ${INK} !important;
-          background: ${PAPER} !important;
+          box-shadow: 3px 3px 0 var(--ink) !important;
+          color: var(--ink) !important;
+          background: var(--bg-paper) !important;
         }
         .dx-sidebar-collapse:active {
           transform: translate(0, 0) !important;

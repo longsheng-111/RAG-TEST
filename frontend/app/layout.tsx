@@ -12,7 +12,6 @@ import QAPanel from '@/components/QAPanel';
 import ExaminerPanel from '@/components/ExaminerPanel';
 import FileManager from '@/components/FileManager';
 import NewSessionModal from '@/components/NewSessionModal';
-import axios from 'axios';
 
 const { Content } = Layout;
 const { Text } = Typography;

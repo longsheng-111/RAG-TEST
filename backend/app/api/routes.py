@@ -6,7 +6,6 @@ import os
 import re
 
 logger = logging.getLogger(__name__)
-import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -27,7 +26,6 @@ from app.services.token_tracker import (
     should_compress_context,
     TokenCost,
 )
-from app.services.qa import qa_query
 from app.services.feedback import feedback_store
 from app.core.vector_store import (
     list_collections,

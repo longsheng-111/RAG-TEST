@@ -86,8 +86,8 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
     <div className="kb-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--brand, #C8392B)' }} />
-          <h2 style={{ margin: 0, color: 'var(--ink, #2B2419)', fontFamily: 'var(--font-display)' }}>知识库管理</h2>
+          <DatabaseOutlined style={{ fontSize: 22, color: 'var(--brand)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>知识库管理</h2>
         </div>
         <Button
           className="op-btn op-btn-primary"
@@ -137,14 +137,14 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
                       style={{
                         fontSize: 22,
                         color: selectedCollection === item.name
-                          ? 'var(--brand, #C8392B)'
-                          : 'var(--ink-secondary, #6B5F4C)',
+                          ? 'var(--brand)'
+                          : 'var(--ink-secondary)',
                         flexShrink: 0,
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
                       <Space size={8} style={{ flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink, #2B2419)' }}>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>
                           {item.name}
                         </span>
                         {selectedCollection === item.name && (
@@ -152,7 +152,7 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
                         )}
                       </Space>
                       <div style={{
-                        color: 'var(--ink-secondary, #6B5F4C)',
+                        color: 'var(--ink-secondary)',
                         marginTop: 4,
                         fontSize: 13,
                         fontVariantNumeric: 'tabular-nums',
@@ -218,142 +218,30 @@ export default function KnowledgeBaseManager({ selectedCollection, onSelectColle
 
       <style jsx>{`
         .kb-root {
-          color: var(--ink, #2B2419);
-          --font-display: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive;
+          color: var(--ink);
         }
-        .op-card {
-          background: var(--bg-panel, #FFFBF0);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-kb-item {
-          padding: 18px;
-          cursor: pointer;
-        }
-        .op-kb-item:hover {
-          transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #2B2419);
-        }
-        .op-kb-item:active {
-          transform: translate(0, 0);
-          box-shadow: none;
-        }
-        .op-kb-item-active {
-          background: var(--brand-soft, #F6DFC8);
-          border-color: var(--ink, #2B2419);
-        }
-        .op-btn {
-          border-radius: 3px;
-          border: 1.5px solid var(--ink, #2B2419);
-          background: var(--bg-panel, #FFFBF0);
-          color: var(--ink, #2B2419);
-          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-btn:hover {
-          transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #2B2419);
-        }
-        .op-btn:active {
-          transform: translate(0, 0);
-          box-shadow: none;
-        }
-        .op-btn-primary {
-          background: var(--brand, #C8392B);
-          border-color: var(--ink, #2B2419);
-          color: #fff;
-        }
-        .op-btn-primary:hover {
-          background: var(--brand-hover, #A92E22);
-        }
-        .op-btn-primary:disabled {
-          background: var(--bg-sunken, #F0E3C6);
-          color: var(--ink-faint, #A3937A);
-          border-color: var(--ink-faint, #A3937A);
-        }
-        .op-link {
-          color: var(--ink-secondary, #6B5F4C);
-          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-link:hover {
-          color: var(--brand, #C8392B);
-        }
-        .op-link-danger {
-          color: var(--brand, #C8392B);
-          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-link-danger:hover {
-          color: var(--brand-hover, #A92E22);
-        }
+        /* 手剪贴纸特许特例（STYLE_GUIDE 4.2），禁止扩散 */
         .op-tag {
           display: inline-flex;
           align-items: center;
           height: 22px;
           padding: 0 8px;
-          background: var(--brand-soft, #F6DFC8);
-          color: var(--brand, #C8392B);
-          border: 1.5px solid var(--ink, #2B2419);
+          background: var(--brand-soft);
+          color: var(--brand);
+          border: 1.5px solid var(--ink);
           border-radius: 3px 4px 2px 5px;
           font-size: 12px;
           font-weight: 600;
           transform: rotate(-2deg);
-          box-shadow: 1.5px 1.5px 0 var(--ink, #2B2419);
-        }
-        .op-input {
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          background: var(--bg-panel, #FFFBF0);
-          transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-input:focus {
-          border-color: var(--brand, #C8392B);
-          outline: 2px solid var(--brand, #C8392B);
-          outline-offset: 2px;
-        }
-        .op-empty {
-          text-align: center;
-          padding: 56px 24px;
-          background: var(--bg-panel, #FFFBF0);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
+          box-shadow: 1.5px 1.5px 0 var(--ink);
         }
         .op-empty-illustration {
-          color: var(--ink-secondary, #6B5F4C);
+          color: var(--ink-secondary);
           display: flex;
           align-items: center;
           justify-content: center;
         }
-        .op-empty h3 {
-          margin: 16px 0 20px;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--ink, #2B2419);
-        }
-        .op-modal :global(.ant-modal-content) {
-          background: var(--bg-panel, #FFFBF0) !important;
-          border: 1.5px solid var(--ink, #2B2419) !important;
-          border-radius: 3px !important;
-          box-shadow: 6px 6px 0 var(--ink, #2B2419) !important;
-        }
-        .op-modal :global(.ant-modal-header) {
-          background: var(--bg-panel, #FFFBF0) !important;
-          border-bottom: 1px solid rgba(43, 36, 25, 0.15) !important;
-        }
-        .op-modal :global(.ant-modal-title) {
-          color: var(--ink, #2B2419) !important;
-        }
         @media (prefers-reduced-motion: reduce) {
-          .op-card, .op-btn, .op-link, .op-link-danger, .op-input {
-            transition: opacity 100ms ease;
-          }
           .op-tag {
             transform: none;
           }

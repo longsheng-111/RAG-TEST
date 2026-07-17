@@ -28,15 +28,6 @@ interface Props {
   defaultCollection?: string;
 }
 
-/* Retro workbook palette (local fallback until global tokens land) */
-const INK = '#2B2419';
-const INK_SECONDARY = '#6B5F4C';
-const PANEL = '#FFFBF0';
-const PAPER = '#F7EDD8';
-const BRAND = '#C8392B';
-const BRAND_SOFT = '#F6DFC8';
-const BRAND_HOVER = '#A92E22';
-
 export default function NewSessionModal({
   open, onCancel, onCreated, defaultCollection = 'knowledge_chunks',
 }: Props) {
@@ -169,8 +160,8 @@ export default function NewSessionModal({
                 value: p.id,
                 label: (
                   <Space direction="vertical" size={0} style={{ width: '100%', lineHeight: 1.4 }}>
-                    <Text strong style={{ fontSize: 14, whiteSpace: 'normal', color: INK }}>{p.name}</Text>
-                    <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'normal', color: INK_SECONDARY }}>{p.description}</Text>
+                    <Text strong style={{ fontSize: 14, whiteSpace: 'normal', color: 'var(--ink)' }}>{p.name}</Text>
+                    <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'normal', color: 'var(--ink-secondary)' }}>{p.description}</Text>
                   </Space>
                 ),
               }))}
@@ -187,10 +178,10 @@ export default function NewSessionModal({
               showIcon
               style={{
                 marginBottom: 16,
-                border: `1.5px solid ${INK}`,
+                border: '1.5px solid var(--ink)',
                 borderRadius: 3,
-                background: PANEL,
-                color: INK,
+                background: 'var(--bg-panel)',
+                color: 'var(--ink)',
               }}
             />
             <Form.Item
@@ -222,23 +213,14 @@ export default function NewSessionModal({
       </Form>
 
       <style>{`
-        .dx-new-session-modal {
-          --ink: ${INK};
-          --ink-secondary: ${INK_SECONDARY};
-          --panel: ${PANEL};
-          --paper: ${PAPER};
-          --brand: ${BRAND};
-          --brand-hover: ${BRAND_HOVER};
-          --brand-soft: ${BRAND_SOFT};
-        }
         .dx-new-session-modal .ant-modal-content {
           border: 1.5px solid var(--ink) !important;
           border-radius: 3px !important;
           box-shadow: 6px 6px 0 var(--ink) !important;
-          background: var(--panel) !important;
+          background: var(--bg-panel) !important;
         }
         .dx-new-session-modal .ant-modal-header {
-          background: var(--panel) !important;
+          background: var(--bg-panel) !important;
           border-radius: 3px 3px 0 0 !important;
           border-bottom: 1px solid var(--ink) !important;
         }
@@ -248,7 +230,7 @@ export default function NewSessionModal({
           font-weight: 600 !important;
         }
         .dx-new-session-modal .ant-modal-footer {
-          background: var(--panel) !important;
+          background: var(--bg-panel) !important;
           border-radius: 0 0 3px 3px !important;
           border-top: 1px solid var(--ink) !important;
         }
@@ -273,7 +255,7 @@ export default function NewSessionModal({
         .dx-new-session-modal .ant-btn-default {
           border: 1.5px solid var(--ink) !important;
           border-radius: 3px !important;
-          background: var(--paper) !important;
+          background: var(--bg-paper) !important;
           color: var(--ink) !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
@@ -289,7 +271,7 @@ export default function NewSessionModal({
         .dx-new-session-modal .ant-radio-button-wrapper {
           border-color: var(--ink) !important;
           color: var(--ink-secondary) !important;
-          background: var(--paper) !important;
+          background: var(--bg-paper) !important;
           border-radius: 3px !important;
           transition: all 200ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
@@ -312,7 +294,7 @@ export default function NewSessionModal({
         .dx-new-session-modal .ant-select-selector {
           border-radius: 3px !important;
           border-color: var(--ink) !important;
-          background: var(--paper) !important;
+          background: var(--bg-paper) !important;
           color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-select:hover .ant-select-selector {
@@ -325,7 +307,7 @@ export default function NewSessionModal({
         .dx-new-session-modal .ant-input {
           border-radius: 3px !important;
           border-color: var(--ink) !important;
-          background: var(--paper) !important;
+          background: var(--bg-paper) !important;
           color: var(--ink) !important;
         }
         .dx-new-session-modal .ant-input:hover {

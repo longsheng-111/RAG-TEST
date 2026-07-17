@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Button, List, Tag, Typography, Popconfirm, Spin, Tooltip, Space,
+  Button, List, Tag, Typography, Popconfirm, Spin, Tooltip,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, MessageOutlined,
@@ -32,16 +32,6 @@ interface Props {
   onCreateSession: () => void;
   refreshTrigger?: number;
 }
-
-/* Retro workbook palette (local fallback until global tokens land) */
-const INK = '#2B2419';
-const INK_SECONDARY = '#6B5F4C';
-const INK_FAINT = '#A3937A';
-const PANEL = '#FFFBF0';
-const PAPER = '#F7EDD8';
-const BRAND = '#C8392B';
-const BRAND_HOVER = '#A92E22';
-const BRAND_SOFT = '#F6DFC8';
 
 export default function SessionPanel({
   activeSessionId, onSelectSession, onCreateSession, refreshTrigger = 0,
@@ -112,8 +102,8 @@ export default function SessionPanel({
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <MessageOutlined style={{ color: BRAND, fontSize: 18 }} />
-          <Text strong style={{ fontSize: 15, color: INK, letterSpacing: '-0.2px' }}>
+          <MessageOutlined style={{ color: 'var(--brand)', fontSize: 18 }} />
+          <Text strong style={{ fontSize: 15, color: 'var(--ink)', letterSpacing: '-0.2px' }}>
             会话
           </Text>
         </div>
@@ -130,8 +120,8 @@ export default function SessionPanel({
               alignItems: 'center',
               justifyContent: 'center',
               padding: 0,
-              background: `${BRAND} !important`,
-              border: `1.5px solid ${INK} !important`,
+              background: 'var(--brand) !important',
+              border: '1.5px solid var(--ink) !important',
               boxShadow: 'none !important',
             }}
           />
@@ -151,14 +141,14 @@ export default function SessionPanel({
             paddingTop: 48,
             gap: 12,
           }}>
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: INK_FAINT }}>
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'var(--ink-faint)' }}>
               <path d="M12 52L24 40L20 36L8 48V52H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M24 40L48 16L44 12L20 36L24 40Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M48 16L52 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M44 12H52V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M8 52H56" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
             </svg>
-            <Text style={{ color: INK_SECONDARY, fontSize: 14 }}>
+            <Text style={{ color: 'var(--ink-secondary)', fontSize: 14 }}>
               还没有存档，新建一个开始闯关
             </Text>
             <Button
@@ -168,8 +158,8 @@ export default function SessionPanel({
               onClick={onCreateSession}
               style={{
                 borderRadius: '3px !important',
-                background: `${BRAND} !important`,
-                border: `1.5px solid ${INK} !important`,
+                background: 'var(--brand) !important',
+                border: '1.5px solid var(--ink) !important',
                 boxShadow: 'none !important',
               }}
             >
@@ -215,7 +205,7 @@ export default function SessionPanel({
                           border: 'none',
                           background: 'transparent',
                         }}
-                        icon={<DownloadOutlined style={{ fontSize: 11, color: INK_SECONDARY }} />}
+                        icon={<DownloadOutlined style={{ fontSize: 11, color: 'var(--ink-secondary)' }} />}
                         onClick={(e) => handleExport(e, session.session_id)} />
                     </Tooltip>
                     <Popconfirm title="删除该会话？" onConfirm={(e) => handleDelete(e as any, session.session_id)}
@@ -226,12 +216,12 @@ export default function SessionPanel({
                           border: 'none',
                           background: 'transparent',
                         }}
-                        icon={<DeleteOutlined style={{ fontSize: 11, color: BRAND }} />}
+                        icon={<DeleteOutlined style={{ fontSize: 11, color: 'var(--brand)' }} />}
                         onClick={(e) => e.stopPropagation()} />
                     </Popconfirm>
                   </div>
                   <div style={{ marginBottom: 6, paddingRight: 28 }}>
-                    <Text strong style={{ fontSize: 13, lineHeight: '1.4', color: INK }} ellipsis>
+                    <Text strong style={{ fontSize: 13, lineHeight: '1.4', color: 'var(--ink)' }} ellipsis>
                       <span style={{ fontFamily: '"ZCOOL KuaiLe", cursive' }}>存档</span>
                       <span style={{ fontFamily: '"Press Start 2P", monospace', marginLeft: 6, marginRight: 8 }}>{slotNum}</span>
                       {session.title || '新会话'}
@@ -243,10 +233,10 @@ export default function SessionPanel({
                       style={{
                         fontSize: 10,
                         lineHeight: '18px',
-                        border: `1.5px solid ${INK} !important`,
+                        border: '1.5px solid var(--ink) !important',
                         borderRadius: '3px !important',
-                        color: INK,
-                        background: `${PAPER} !important`,
+                        color: 'var(--ink)',
+                        background: 'var(--bg-paper) !important',
                         margin: 0,
                         fontWeight: 500,
                         transform: `rotate(${stickerRotation(index)}deg)`,
@@ -262,11 +252,11 @@ export default function SessionPanel({
                         style={{
                           fontSize: 10,
                           lineHeight: '18px',
-                          border: `1.5px solid ${INK} !important`,
+                          border: '1.5px solid var(--ink) !important',
                           borderRadius: '3px !important',
                           margin: 0,
-                          color: INK,
-                          background: `${PAPER} !important`,
+                          color: 'var(--ink)',
+                          background: 'var(--bg-paper) !important',
                           fontWeight: 500,
                           transform: `rotate(${-stickerRotation(index)}deg)`,
                           transformOrigin: 'center center',
@@ -278,15 +268,15 @@ export default function SessionPanel({
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <ClockCircleOutlined style={{ fontSize: 10, color: INK_FAINT, flexShrink: 0 }} />
-                    <Text style={{ fontSize: 10, color: INK_FAINT, whiteSpace: 'nowrap' }}>
+                    <ClockCircleOutlined style={{ fontSize: 10, color: 'var(--ink-faint)', flexShrink: 0 }} />
+                    <Text style={{ fontSize: 10, color: 'var(--ink-faint)', whiteSpace: 'nowrap' }}>
                       {formatTime(session.updated_at)} · {session.message_count} 条消息
                     </Text>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Text style={{
                       fontSize: 11,
-                      color: INK_FAINT,
+                      color: 'var(--ink-faint)',
                       fontWeight: 500,
                       whiteSpace: 'nowrap',
                       fontVariantNumeric: 'tabular-nums',
@@ -304,19 +294,19 @@ export default function SessionPanel({
 
       <style>{`
         .dx-session-card {
-          background: ${PAPER};
-          border: 1.5px solid ${INK};
+          background: var(--bg-paper);
+          border: 1.5px solid var(--ink);
           border-radius: 3px;
           box-shadow: none;
         }
         .dx-session-card-active {
-          background: ${BRAND_SOFT} !important;
-          border-color: ${INK} !important;
+          background: var(--brand-soft) !important;
+          border-color: var(--ink) !important;
           box-shadow: none !important;
         }
         .dx-session-card:hover {
           transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 ${INK};
+          box-shadow: 3px 3px 0 var(--ink);
         }
         .dx-session-card-active:hover {
           transform: none;
@@ -328,19 +318,19 @@ export default function SessionPanel({
         }
         .dx-session-sticker:hover {
           transform: rotate(0deg) translate(-1px, -1px) !important;
-          box-shadow: 3px 3px 0 ${INK} !important;
+          box-shadow: 3px 3px 0 var(--ink) !important;
         }
         .dx-session-sticker:active {
           transform: rotate(0deg) translate(0, 0) !important;
           box-shadow: none !important;
         }
         .dx-session-panel .ant-btn-primary:hover {
-          background: ${BRAND_HOVER} !important;
-          box-shadow: 3px 3px 0 ${INK} !important;
+          background: var(--brand-hover) !important;
+          box-shadow: 3px 3px 0 var(--ink) !important;
           transform: translate(-1px, -1px);
         }
         .dx-session-panel .ant-btn-primary:active {
-          background: ${BRAND_HOVER} !important;
+          background: var(--brand-hover) !important;
           box-shadow: none !important;
           transform: translate(0, 0);
         }

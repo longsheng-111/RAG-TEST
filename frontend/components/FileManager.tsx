@@ -101,8 +101,8 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
       title: '文件名', dataIndex: 'file_name', key: 'file_name',
       render: (name: string) => (
         <Space size={10}>
-          <FileTextOutlined style={{ fontSize: 18, color: 'var(--ink-secondary, #6B5F4C)', flexShrink: 0 }} />
-          <Text strong style={{ color: 'var(--ink, #2B2419)' }}>{name}</Text>
+          <FileTextOutlined style={{ fontSize: 18, color: 'var(--ink-secondary)', flexShrink: 0 }} />
+          <Text strong style={{ color: 'var(--ink)' }}>{name}</Text>
         </Space>
       ),
     },
@@ -156,8 +156,8 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
     <div className="fm-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <FileTextOutlined style={{ fontSize: 22, color: 'var(--brand, #C8392B)' }} />
-          <h2 style={{ margin: 0, color: 'var(--ink, #2B2419)', fontFamily: 'var(--font-display)' }}>文件管理</h2>
+          <FileTextOutlined style={{ fontSize: 22, color: 'var(--brand)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>文件管理</h2>
         </div>
         <Space size={12}>
           <Select
@@ -200,16 +200,16 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
       <Drawer
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FileTextOutlined style={{ color: 'var(--brand, #C8392B)' }} />
-            <span style={{ fontWeight: 600, color: 'var(--ink, #2B2419)' }}>预览：{preview.name}</span>
+            <FileTextOutlined style={{ color: 'var(--brand)' }} />
+            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>预览：{preview.name}</span>
           </div>
         }
         open={preview.open}
         onClose={() => setPreview((p) => ({ ...p, open: false }))}
         width={700}
         styles={{
-          body: { padding: 20, background: 'var(--bg-paper, #F7EDD8)' },
-          header: { borderBottom: '1px solid rgba(43,36,25,0.15)' },
+          body: { padding: 20, background: 'var(--bg-paper)' },
+          header: { borderBottom: '1px solid var(--border)' },
         }}
       >
         {preview.truncated && (
@@ -224,144 +224,13 @@ export default function FileManager({ collectionName, onCollectionChange }: Prop
 
       <style jsx>{`
         .fm-root {
-          color: var(--ink, #2B2419);
-          --font-display: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive;
-        }
-        .op-card {
-          background: var(--bg-panel, #FFFBF0);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-btn {
-          border-radius: 3px;
-          border: 1.5px solid var(--ink, #2B2419);
-          background: var(--bg-panel, #FFFBF0);
-          color: var(--ink, #2B2419);
-          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-btn:hover {
-          transform: translate(-1px, -1px);
-          box-shadow: 3px 3px 0 var(--ink, #2B2419);
-          border-color: var(--brand, #C8392B);
-          color: var(--brand, #C8392B);
-        }
-        .op-btn:active {
-          transform: translate(0, 0);
-          box-shadow: none;
-        }
-        .op-link {
-          color: var(--ink-secondary, #6B5F4C);
-          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-link:hover {
-          color: var(--brand, #C8392B);
-        }
-        .op-link-danger {
-          color: var(--brand, #C8392B);
-          transition: color 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-link-danger:hover {
-          color: var(--brand-hover, #A92E22);
-        }
-        .op-tag {
-          display: inline-flex;
-          align-items: center;
-          height: 22px;
-          padding: 0 8px;
-          background: var(--bg-panel, #FFFBF0);
-          color: var(--ink-secondary, #6B5F4C);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-        .op-tag-sunken {
-          display: inline-flex;
-          align-items: center;
-          height: 22px;
-          padding: 0 8px;
-          background: var(--bg-sunken, #F0E3C6);
-          color: var(--ink, #2B2419);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-        .op-tag-warn {
-          display: inline-flex;
-          align-items: center;
-          height: 22px;
-          padding: 0 8px;
-          background: var(--brand-soft, #F6DFC8);
-          color: var(--brand, #C8392B);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-        .op-empty {
-          text-align: center;
-          padding: 56px 24px;
+          color: var(--ink);
         }
         .op-empty-illustration {
-          color: var(--ink-secondary, #6B5F4C);
+          color: var(--ink-secondary);
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-        .op-empty h3 {
-          margin: 16px 0 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--ink, #2B2419);
-        }
-        .op-code-block {
-          background: var(--bg-panel, #FFFBF0);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          padding: 16px;
-          max-height: calc(100vh - 200px);
-          overflow: auto;
-          white-space: pre-wrap;
-          font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
-          font-size: 13px;
-          line-height: 1.7;
-        }
-        .op-select :global(.ant-select-selector) {
-          border: 1.5px solid var(--ink, #2B2419) !important;
-          border-radius: 3px !important;
-          background: var(--bg-panel, #FFFBF0) !important;
-        }
-        .op-select :global(.ant-select-focused .ant-select-selector) {
-          border-color: var(--brand, #C8392B) !important;
-          outline: 2px solid var(--brand, #C8392B) !important;
-          outline-offset: 2px !important;
-        }
-        .op-table :global(.ant-table) {
-          border-radius: 3px !important;
-        }
-        .op-table :global(.ant-table-thead > tr > th) {
-          background: var(--bg-sunken, #F0E3C6) !important;
-          color: var(--ink, #2B2419) !important;
-          font-weight: 600 !important;
-          border-bottom: 1px solid rgba(43, 36, 25, 0.15) !important;
-        }
-        .op-table :global(.ant-table-tbody > tr > td) {
-          border-bottom: 1px solid rgba(43, 36, 25, 0.15) !important;
-        }
-        .op-table :global(.ant-table-tbody > tr:hover > td) {
-          background: var(--bg-sunken, #F0E3C6) !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .op-card, .op-btn, .op-link, .op-link-danger {
-            transition: opacity 100ms ease;
-          }
         }
       `}</style>
     </div>

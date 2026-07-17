@@ -34,7 +34,7 @@
 | 特性 | 描述 |
 |-----|------|
 | **多格式支持** | 支持 PDF（含图片型）、DOCX、XLSX、TXT、MD 等格式 |
-| **视觉模型集成** | 使用通义千问 qwen-vl-plus 处理图片型 PDF |
+| **视觉模型集成** | 使用通义千问 qwen-plus（OpenAI 兼容接口）处理图片型 PDF |
 | **混合检索** | 关键词检索 + 向量检索 + 加权融合 |
 | **多知识库** | 支持创建多个独立知识库，按需切换 |
 | **对话记忆** | 保留对话历史，支持上下文理解 |
@@ -48,13 +48,13 @@
 | **前端** | Ant Design | 5.22.7 | UI 组件库 |
 | **前端** | React Markdown | ^9.0.1 | Markdown 渲染 |
 | **后端** | FastAPI | ^0.104.1 | Python Web 框架 |
-| **后端** | ChromaDB | ^0.4.15 | 向量数据库 |
+| **后端** | FAISS (faiss-cpu) | ^1.7.0 | 向量检索引擎（本地索引文件，已替代 ChromaDB） |
 | **后端** | Sentence Transformers | ^2.2.2 | 文本嵌入模型 |
-| **后端** | PyMuPDF | ^1.27.2 | PDF 处理 |
+| **后端** | PyMuPDF | ^1.26.0 | PDF 处理 |
 | **后端** | OpenAI Python | ^1.1.0 | LLM API 调用 |
 | **嵌入模型** | bge-small-zh-v1.5 | - | 中文语义嵌入 |
 | **LLM** | DeepSeek Chat | - | 问答生成 |
-| **视觉模型** | Qwen-VL-Plus | - | 图片型 PDF 处理 |
+| **视觉模型** | Qwen-Plus (DashScope) | - | 图片型 PDF 处理 |
 
 ---
 
@@ -82,7 +82,7 @@
 │  │                   Services                              │   │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌─────────┐ │   │
 │  │  │ Ingest   │ │ QA       │ │ VectorStore  │ │ Config  │ │   │
-│  │  │ 文件处理 │ │ 问答服务 │ │ 向量存储     │ │ 配置管理 │ │   │
+│  │  │ 文件处理 │ │ 问答服务 │ │ FAISS向量存储│ │ 配置管理 │ │   │
 │  │  └──────────┘ └──────────┘ └──────────────┘ └─────────┘ │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
@@ -91,8 +91,8 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                       数据层                                   │
 │  ┌─────────────────────────┐ ┌─────────────────────────────┐   │
-│  │      ChromaDB           │ │           Uploads           │   │
-│  │  (向量数据库)          │ │  (文件存储目录)             │   │
+│  │  FAISS + 元数据 JSON    │ │           Uploads           │   │
+│  │  (vector_db 目录)       │ │  (文件存储目录)             │   │
 │  └─────────────────────────┘ └─────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -150,8 +150,9 @@
               └───────────┬───────────┘
                           ▼
               ┌───────────────────────┐
-              │    存入ChromaDB      │
-              │  (文件+向量+元数据)  │
+              │  存入 FAISS 向量库    │
+              │ (index.faiss + 元数据 │
+              │  JSON，按知识库分目录)│
               └───────────────────────┘
 ```
 
@@ -174,39 +175,39 @@
 
 ### 3.2 向量存储模块 (vector_store.py)
 
-**功能**：管理向量数据库的增删改查
+**功能**：管理向量索引与元数据的增删改查
 
-**支持的向量数据库**：
-- **ChromaDB**（默认）：轻量级，无需额外部署
-- **Milvus**：企业级，需单独部署
+**向量引擎**：
+- **FAISS（faiss-cpu）**：本地索引文件，无需额外部署。每个知识库一个目录（`backend/app/vector_db/<知识库名>/`），内含 `index.faiss`（IndexFlatIP 索引，归一化向量内积等价余弦相似度）与 `metadata.json`（`documents`/`metadatas`/`ids` 三个平行数组）；根目录 `_collections.json` 为知识库注册表。项目已从 ChromaDB 迁移至 FAISS（2026-07）。
 
 **核心操作**：
 
 | 方法 | 功能 |
 |-----|------|
 | `add_texts()` | 添加文本向量 |
-| `search()` | 向量相似度检索 |
-| `delete_file()` | 删除文件相关数据 |
+| `vector_search()` | 向量相似度检索 |
+| `delete_file()` | 删除文件相关数据（FAISS 不支持按条删除，重建索引） |
 | `get_files()` | 获取文件列表 |
+| `create/delete/rename_collection()` | 知识库创建、删除、重命名 |
 
 ### 3.3 问答模块 (qa.py)
 
 **功能**：实现检索增强生成
 
-**检索策略**：混合检索（Hybrid Retrieval）
+**检索策略**：混合检索（Hybrid Retrieval），当前实现为 `services/retrieval.py` 的 `AdvancedRetriever`：
 
-```python
-class HybridRetriever:
-    def keyword_search(query):      # 关键词检索 (30%)
-    def vector_search(query):       # 向量检索 (70%)
-    def hybrid_search(query):       # 加权融合
-```
+1. BM25 召回 top 20
+2. 向量检索召回 top 20
+3. RRF（倒数排名融合）得到 top 15
+4. BGE 向量交叉相似度重排序，取 top 5
+
+> 注：早期版本为「关键词 30% + 向量 70%」线性加权融合，现已升级为上述 BM25 + RRF 方案。
 
 ### 3.4 视觉模型模块
 
 **功能**：处理图片型 PDF 的文字提取
 
-**技术实现**：使用通义千问 qwen-vl-plus 视觉模型
+**技术实现**：使用通义千问 qwen-plus 视觉模型（DashScope OpenAI 兼容接口，逐页渲染为图片后调用）
 
 ---
 
@@ -267,6 +268,8 @@ def read_text_from_file(file_path: Path) -> str:
 ```
 
 #### 4.1.3 图片型 PDF 特殊处理
+
+> 注：以下为早期实现示意（dashscope SDK + qwen-vl-plus）。当前实现经 OpenAI 兼容接口调用 qwen-plus，见 `backend/app/services/ingest.py` 的 `extract_text_with_qwen_vl()`。
 
 当普通 PDF 提取失败时，自动调用通义千问视觉模型：
 
@@ -469,6 +472,8 @@ Chunk 3: "课程介绍 > 无监督学习\n\n无监督学习则是在没有标注
 
 ## 5. 检索优化详解
 
+> 注：本章 5.1–5.4 的代码与权重示例为**早期实现**（关键词 30% + 向量 70% 线性加权，基于 ChromaDB API）。当前实现以 `backend/app/services/retrieval.py` 为准：BM25 召回 + 向量召回 → RRF 融合 → BGE 重排序，向量引擎为 FAISS（见 3.2 节）。
+
 ### 5.1 混合检索架构
 
 项目采用**混合检索策略**，结合关键词检索和向量检索的优势：
@@ -575,8 +580,8 @@ def vector_search(self, query: str, top_k: int = 10) -> List[tuple[str, str, flo
 
 | 配置项 | 值 | 说明 |
 |-------|-----|------|
-| 相似度度量 | Cosine | 余弦相似度 |
-| 索引类型 | HNSW | 层次导航小世界图 |
+| 相似度度量 | Cosine | 归一化向量 + 内积，等价余弦相似度 |
+| 索引类型 | FAISS IndexFlatIP | 精确内积检索（非 HNSW 近似索引） |
 | 向量维度 | 384 | BGE 模型输出维度 |
 
 ### 5.4 加权融合策略
@@ -631,6 +636,8 @@ def hybrid_search(self, query: str, weights: List[float] = [0.3, 0.7], top_k: in
 
 ### 5.6 当前方法 vs BM25 + RRF
 
+> 注：当前检索已升级为右列方案（BM25 + 密集向量 + RRF，并增加 BGE 重排序，见 `retrieval.py`），本表保留作方案演进记录。
+
 | 对比维度 | 当前方法 | BM25 + 密集向量 + RRF |
 |---------|---------|---------------------|
 | **关键词检索** | 简单词频匹配 | BM25（考虑词频和文档长度） |
@@ -662,12 +669,14 @@ pip install -r requirements.txt
 
 **步骤 2：配置 API 密钥**
 
-编辑 `backend/app/core/config.py`：
-```python
-class Settings(BaseModel):
-    deepseek_api_key: str = "your-deepseek-key"
-    dashscope_api_key: str = "your-dashscope-key"
-    # ... 其他配置
+在项目根目录复制 `.env.example` 为 `.env` 并填入密钥（`config.py` 通过 pydantic-settings 自动读取）：
+```bash
+cp .env.example .env
+```
+```env
+DEEPSEEK_API_KEY=your-deepseek-key
+DASHSCOPE_API_KEY=your-dashscope-key
+# ... 其他配置均有默认值，按需覆盖
 ```
 
 **步骤 3：启动服务**
@@ -780,6 +789,24 @@ Content-Type: application/json
 | `/api/files/{file_name}?collection_name=xxx` | DELETE | 删除文件 |
 | `/api/files/{file_name}/preview?collection_name=xxx` | GET | 预览文件内容 |
 
+### 7.6 会话 / 聊天 / 反馈 / 模拟面试
+
+> 本节为简表；全部 24 个端点的完整定义以 `backend/app/api/routes.py` 为准。
+
+| 接口 | 方法 | 功能 |
+|-----|------|------|
+| `/api/sessions` | GET / POST | 列出 / 创建会话 |
+| `/api/sessions/{session_id}` | GET / DELETE | 会话详情 / 删除会话 |
+| `/api/sessions/{session_id}/persona` | PUT | 切换会话角色 |
+| `/api/sessions/{session_id}/title` | PUT | 更新会话标题 |
+| `/api/sessions/{session_id}/export` | GET | 导出会话为 Markdown |
+| `/api/personas` | GET | 获取角色列表 |
+| `/api/chat` | POST | 会话化问答（推荐，替代无状态 `/api/query`） |
+| `/api/feedback` | POST | 提交引用纠错反馈（replace / inaccurate） |
+| `/api/exam/start` | POST | 开始模拟面试 |
+| `/api/exam/{session_id}/next` | POST | 提交回答，进入评分/追问/下一题/总结 |
+| `/api/exam/{session_id}` | GET | 获取面试状态 |
+
 ---
 
 ## 8. 使用指南
@@ -820,13 +847,15 @@ Content-Type: application/json
 | 配置项 | 默认值 | 说明 |
 |-------|-------|------|
 | `app_name` | dx-rag-demo | 应用名称 |
-| `cors_origins` | ["*"] | 允许的跨域来源 |
-| `chroma_collection` | knowledge_chunks | 默认知识库名称 |
-| `chroma_persist_dir` | chroma_db | 数据库存储目录 |
-| `embed_model` | models/bge-small-zh-v1.5 | 嵌入模型路径 |
-| `upload_dir` | uploads | 文件上传目录 |
+| `cors_origins` | ["http://localhost:3000", "http://127.0.0.1:3000"] | 允许的跨域来源 |
+| `vector_collection` | knowledge_chunks | 默认知识库名称 |
+| `vector_persist_dir` | backend/app/vector_db | 向量库存储目录（FAISS） |
+| `session_dir` | backend/app/data/sessions | 会话数据目录（反馈数据存于其同级 feedback/ 目录） |
+| `embed_model` | BAAI/bge-small-zh-v1.5 | 嵌入模型（优先使用本地 ModelScope 缓存） |
+| `upload_dir` | backend/app/uploads | 文件上传目录 |
 | `max_chunk_size` | 800 | 文本切分最大长度 |
 | `chunk_overlap` | 120 | 切分重叠长度 |
+| `retrieval_similarity_threshold` | 0.65 | 检索相关性阈值（余弦相似度） |
 | `deepseek_api_key` | - | DeepSeek API 密钥 |
 | `dashscope_api_key` | - | 通义千问 API 密钥 |
 
@@ -882,7 +911,7 @@ taskkill /F /PID <pid>
 
 **方法**：
 1. 在知识库管理页面删除知识库
-2. 或删除 `chroma_db` 目录后重启服务
+2. 或删除 `backend/app/vector_db` 目录（或其中某个知识库子目录）后重启服务
 
 ---
 
@@ -892,24 +921,40 @@ taskkill /F /PID <pid>
 dx-rag/
 ├── backend/                    # 后端服务
 │   ├── app/
-│   │   ├── api/              # API 路由
-│   │   │   └── routes.py      # 接口定义
-│   │   ├── core/              # 核心模块
-│   │   │   ├── config.py      # 配置管理
-│   │   │   └── vector_store.py # 向量存储
-│   │   ├── services/          # 业务服务
-│   │   │   ├── ingest.py      # 文件处理
-│   │   │   └── qa.py          # 问答服务
-│   │   └── main.py            # 入口文件
-│   ├── chroma_db/             # 向量数据库
-│   ├── models/                # 嵌入模型
-│   └── uploads/               # 上传文件
-├── frontend/                  # 前端应用
+│   │   ├── api/                # API 路由
+│   │   │   └── routes.py       # 接口定义（24 个端点）
+│   │   ├── core/               # 核心模块
+│   │   │   ├── config.py       # 配置管理（读取根目录 .env）
+│   │   │   ├── vector_store.py # FAISS 向量存储 + JSON 元数据
+│   │   │   ├── session.py      # 会话管理（JSON 落盘）
+│   │   │   └── persona.py      # 内置角色模板
+│   │   ├── services/           # 业务服务
+│   │   │   ├── ingest.py       # 文件处理与切片
+│   │   │   ├── qa.py           # 问答服务
+│   │   │   ├── agent.py        # ReAct 检索 Agent
+│   │   │   ├── retrieval.py    # 混合检索（BM25 + 向量 + RRF + 重排序）
+│   │   │   ├── examiner.py     # 模拟面试（考官模式）
+│   │   │   ├── feedback.py     # 引用纠错反馈存储
+│   │   │   ├── token_tracker.py# Token 统计与上下文压缩
+│   │   │   ├── title_generator.py # 会话自动标题
+│   │   │   └── harness.py      # 输入护栏与兜底
+│   │   ├── data/               # 运行时数据（sessions/、feedback/）
+│   │   ├── uploads/            # 上传文件
+│   │   ├── vector_db/          # FAISS 向量库（按知识库分目录）
+│   │   └── main.py             # 入口文件
+│   ├── test_data/              # 测试数据（八股文题库等）
+│   └── requirements.txt
+├── frontend/                   # 前端应用
 │   ├── app/
-│   │   └── page.tsx           # 主页面
-│   ├── next.config.js         # Next.js 配置
-│   └── package.json           # 依赖配置
-└── README.md                  # 项目说明
+│   │   ├── layout.tsx          # 根布局（主题与整体框架）
+│   │   ├── page.tsx            # 主页面
+│   │   └── globals.css         # 全局样式与设计 token
+│   ├── components/             # 面板组件（问答/面试/会话/知识库/文件）
+│   ├── next.config.js          # Next.js 配置（/api 代理到 8000）
+│   └── package.json            # 依赖配置
+├── .env.example                # 环境变量模板
+├── start.sh / start.bat        # 一键启动脚本
+└── README.md                   # 项目说明
 ```
 
 ---
@@ -917,3 +962,7 @@ dx-rag/
 **版本**: v1.0
 **最后更新**: 2026年5月
 **维护者**: DX-RAG Team
+
+---
+
+**修订说明（2026-07）**：向量引擎已从 ChromaDB 迁移至 FAISS（faiss-cpu），数据目录由 `chroma_db` 调整为 `backend/app/vector_db`；同步修订了技术栈表、3.2 节、5.3.2 节、Q5、附录目录结构，并补充 7.6 节（会话/聊天/反馈/模拟面试端点）。检索章节（5.1–5.4）与 4.1.3 节保留早期实现示意，文中已加注说明，当前实现以 `backend/app/services/retrieval.py`、`ingest.py` 为准。

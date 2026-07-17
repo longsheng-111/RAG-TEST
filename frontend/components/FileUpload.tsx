@@ -92,14 +92,14 @@ export default function FileUpload({ collectionName }: Props) {
     <div className="fu-root">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <CloudUploadOutlined style={{ fontSize: 22, color: 'var(--brand, #C8392B)' }} />
-          <h2 style={{ margin: 0, color: 'var(--ink, #2B2419)', fontFamily: 'var(--font-display)' }}>上传文件</h2>
+          <CloudUploadOutlined style={{ fontSize: 22, color: 'var(--brand)' }} />
+          <h2 style={{ margin: 0, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>上传文件</h2>
         </div>
       </div>
 
       <div className="op-card" style={{ marginBottom: 20, padding: 24 }}>
         <div className="op-bar">
-          <Text strong style={{ color: 'var(--ink, #2B2419)', fontSize: 14 }}>
+          <Text strong style={{ color: 'var(--ink)', fontSize: 14 }}>
             目标知识库
           </Text>
           <Select
@@ -113,12 +113,12 @@ export default function FileUpload({ collectionName }: Props) {
 
         <Dragger {...uploadProps} disabled={uploading} className="op-upload">
           <p className="ant-upload-drag-icon">
-            <InboxOutlined style={{ color: 'var(--brand, #C8392B)', fontSize: 48 }} />
+            <InboxOutlined style={{ color: 'var(--brand)', fontSize: 48 }} />
           </p>
-          <p className="ant-upload-text" style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink, #2B2419)' }}>
+          <p className="ant-upload-text" style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink)' }}>
             点击或拖拽文件到此处
           </p>
-          <p className="ant-upload-hint" style={{ fontSize: 13, color: 'var(--ink-secondary, #6B5F4C)', maxWidth: 420, margin: '8px auto 0' }}>
+          <p className="ant-upload-hint" style={{ fontSize: 13, color: 'var(--ink-secondary)', maxWidth: 420, margin: '8px auto 0' }}>
             支持 PDF、Word、Excel、Markdown、TXT — 单个文件最大 50MB
           </p>
         </Dragger>
@@ -130,8 +130,8 @@ export default function FileUpload({ collectionName }: Props) {
               percent={99}
               status="active"
               format={() => '处理中...'}
-              strokeColor="var(--brand, #C8392B)"
-              trailColor="var(--bg-sunken, #F0E3C6)"
+              strokeColor="var(--brand)"
+              trailColor="var(--bg-sunken)"
               strokeLinecap="butt"
               steps={12}
             />
@@ -155,9 +155,9 @@ export default function FileUpload({ collectionName }: Props) {
           className="op-alert-success"
           style={{
             marginBottom: 20,
-            background: 'var(--bg-paper, #F7EDD8)',
-            border: '1.5px solid var(--ink, #2B2419)',
-            borderRadius: 3,
+            background: 'var(--bg-paper)',
+            border: '1.5px solid var(--ink)',
+            borderRadius: 'var(--radius)',
             boxShadow: 'none',
           }}
         />
@@ -172,7 +172,7 @@ export default function FileUpload({ collectionName }: Props) {
                 key={group.type}
                 className="op-format-group"
               >
-                <Text strong style={{ fontSize: 13, color: 'var(--ink, #2B2419)', display: 'block', marginBottom: 10 }}>
+                <Text strong style={{ fontSize: 13, color: 'var(--ink)', display: 'block', marginBottom: 10 }}>
                   {group.type}
                 </Text>
                 <Space wrap size={8}>
@@ -185,7 +185,7 @@ export default function FileUpload({ collectionName }: Props) {
               </div>
             ))}
           </div>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16, color: 'var(--ink-faint, #A3937A)' }}>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16, color: 'var(--ink-faint)' }}>
             * 扫描版 PDF 需要配置 DashScope API Key 进行 OCR 识别
           </Text>
         </div>
@@ -193,90 +193,19 @@ export default function FileUpload({ collectionName }: Props) {
 
       <style jsx>{`
         .fu-root {
-          color: var(--ink, #2B2419);
-          --font-display: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive;
-        }
-        .op-card {
-          background: var(--bg-panel, #FFFBF0);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          transition: transform 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            box-shadow 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-card-header {
-          padding: 14px 24px;
-          border-bottom: 1px solid rgba(43, 36, 25, 0.15);
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--ink, #2B2419);
-          font-family: var(--font-display);
-        }
-        .op-bar {
-          margin-bottom: 20px;
-          padding: 14px 16px;
-          border-radius: 3px;
-          background: var(--bg-sunken, #F0E3C6);
-          border: 1.5px solid var(--ink, #2B2419);
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-        .op-select :global(.ant-select-selector) {
-          border: 1.5px solid var(--ink, #2B2419) !important;
-          border-radius: 3px !important;
-          background: var(--bg-panel, #FFFBF0) !important;
-        }
-        .op-select :global(.ant-select-focused .ant-select-selector) {
-          border-color: var(--brand, #C8392B) !important;
-          outline: 2px solid var(--brand, #C8392B) !important;
-          outline-offset: 2px !important;
-        }
-        .op-upload :global(.ant-upload-drag) {
-          background: var(--bg-paper, #F7EDD8) !important;
-          border: 1.5px dashed var(--ink-faint, #A3937A) !important;
-          border-radius: 3px !important;
-          transition: border-color 150ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            background 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .op-upload :global(.ant-upload-drag:hover) {
-          border-color: var(--brand, #C8392B) !important;
-          background: var(--brand-soft, #F6DFC8) !important;
-        }
-        .op-tag-sunken {
-          display: inline-flex;
-          align-items: center;
-          height: 22px;
-          padding: 0 8px;
-          background: var(--bg-sunken, #F0E3C6);
-          color: var(--ink, #2B2419);
-          border: 1.5px solid var(--ink, #2B2419);
-          border-radius: 3px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-        .op-format-group {
-          padding: 14px;
-          border-radius: 3px;
-          background: var(--bg-paper, #F7EDD8);
-          border: 1.5px solid var(--ink, #2B2419);
+          color: var(--ink);
         }
         .op-progress :global(.ant-progress-steps-item) {
           border-radius: 0 !important;
         }
         .op-success-icon {
-          color: var(--brand, #C8392B);
+          color: var(--brand);
           display: inline-flex;
           align-items: center;
           justify-content: center;
         }
         .op-alert-success :global(.ant-alert-icon) {
-          color: var(--brand, #C8392B);
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .op-card {
-            transition: opacity 100ms ease;
-          }
+          color: var(--brand);
         }
       `}</style>
     </div>
