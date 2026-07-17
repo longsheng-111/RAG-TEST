@@ -65,6 +65,109 @@ interface Props {
 
 const MAX_QUESTIONS = 5;
 
+/* ============================================================
+   教室叙事 · 粉笔盒（v1.6·批次一）
+   纯 inline SVG 分层绘制：盒盖/盒身/粉笔/灰粒各独立层
+   ============================================================ */
+function ChalkBox({ wholeCount, stubCount, animStage }: {
+  wholeCount: number;   // 盒内整支粉笔数
+  stubCount: number;    // 已消耗的粉笔头数
+  animStage: 'idle' | 'start' | 'score';
+}) {
+  const total = wholeCount + stubCount;
+  const lidAngle = animStage === 'idle' ? -20 : -28; // hover 掀盖时再调
+  return (
+    <svg
+      className={`chalk-box chalk-box--${animStage}`}
+      viewBox="0 0 180 90"
+      width="100"
+      height="50"
+      aria-label="粉笔盒"
+      style={{ position: 'absolute', left: 8, bottom: -24, zIndex: 1 }}
+    >
+      {/* 盒身 */}
+      <rect x="15" y="32" width="140" height="44" rx="3"
+        fill="var(--ink-secondary)" stroke="var(--ink)" strokeWidth="1.5" />
+      {/* 盒盖（SVG transform 倾斜） */}
+      <g transform={`rotate(${lidAngle}, 155, 32)`} style={{ transformOrigin: '155px 32px', transition: 'transform 260ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <rect x="12" y="10" width="146" height="22" rx="3"
+          fill="var(--ink)" stroke="var(--ink)" strokeWidth="1.5" />
+      </g>
+      {/* 粉笔（从盒口伸出） */}
+      {Array.from({ length: total }).map((_, i) => {
+        const isStub = i < stubCount;
+        const colors = ['var(--chalk-bright)', 'var(--chalk-yellow)', 'var(--brand)', 'var(--chalk-bright)', 'var(--chalk-bright)'];
+        return (
+          <rect key={i}
+            x={22 + i * 14} y={isStub ? 34 : 14}
+            width="8" height={isStub ? 12 : 36} rx="3"
+            fill={colors[i % colors.length]}
+            stroke="rgba(0,0,0,0.3)" strokeWidth="0.8"
+            style={{ transition: 'y 200ms cubic-bezier(0.34,1.56,0.64,1), height 200ms cubic-bezier(0.34,1.56,0.64,1)' }}
+          />
+        );
+      })}
+      {/* 盒身文字 */}
+      <text x="90" y="68" textAnchor="middle"
+        fontFamily="var(--font-display)" fontSize="6" fill="var(--chalk)" opacity="0.7">
+        DX牌无尘粉笔
+      </text>
+      {/* 粉笔灰 */}
+      {animStage === 'score' && (
+        <>
+          <circle cx="30" cy="78" r="1.2" fill="var(--chalk)" opacity="0.5">
+            <animate attributeName="cy" from="76" to="84" dur="2s" fill="freeze" />
+            <animate attributeName="opacity" from="0.6" to="0" dur="2s" fill="freeze" />
+          </circle>
+          <circle cx="130" cy="76" r="1" fill="var(--chalk)" opacity="0.4">
+            <animate attributeName="cy" from="74" to="82" dur="1.8s" fill="freeze" />
+            <animate attributeName="opacity" from="0.5" to="0" dur="1.8s" fill="freeze" />
+          </circle>
+          <circle cx="80" cy="80" r="0.8" fill="var(--chalk-yellow)" opacity="0.45">
+            <animate attributeName="cy" from="78" to="86" dur="2.2s" fill="freeze" />
+            <animate attributeName="opacity" from="0.5" to="0" dur="2.2s" fill="freeze" />
+          </circle>
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** 板面左上角花：五角星 + 三道光芒（粉笔简笔画） */
+function CornerStar() {
+  return (
+    <svg viewBox="0 0 64 64" width="56" height="56"
+      style={{ position: 'absolute', left: 10, top: 10, opacity: 0.5, pointerEvents: 'none' }}
+      aria-hidden="true"
+    >
+      <polygon points="32,8 38,26 56,26 42,38 48,56 32,46 16,56 22,38 8,26 26,26"
+        fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinejoin="round" />
+      <line x1="32" y1="56" x2="32" y2="64" stroke="var(--chalk)" strokeWidth="1" opacity="0.6" />
+      <line x1="8" y1="26" x2="0" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4" />
+      <line x1="56" y1="26" x2="64" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4" />
+    </svg>
+  );
+}
+
+/** 板面右下角花：台灯（粉笔简笔画） */
+function CornerLamp() {
+  return (
+    <svg viewBox="0 0 64 64" width="56" height="56"
+      style={{ position: 'absolute', right: 12, bottom: 40, opacity: 0.5, pointerEvents: 'none' }}
+      aria-hidden="true"
+    >
+      <ellipse cx="32" cy="52" rx="20" ry="3" fill="none" stroke="var(--chalk)" strokeWidth="1.5" />
+      <line x1="16" y1="52" x2="22" y2="28" stroke="var(--chalk)" strokeWidth="1.2" />
+      <line x1="48" y1="52" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1.2" />
+      <path d="M22,28 Q32,8 42,28" fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="22" y1="28" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1" />
+      <circle cx="32" cy="22" r="2" fill="var(--chalk-yellow)" opacity="0.7" />
+    </svg>
+  );
+}
+
+/** 粉笔盒与角花共享样式 → 移入 globals.css .ep-root 段 */
+
 function scoreColor(score: number) {
   // 黑板场景：品牌红不上绿底，改用粉笔色阶
   if (score >= 7) return 'var(--cite-3)';
@@ -645,6 +748,8 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   if (phase === 'config') {
     return (
       <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
+        <CornerStar /><CornerLamp />
+        <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage="idle" />
         <div className="op-card">
           <div className="op-card-header ep-config-header">
             <span>配置模拟面试</span>
@@ -691,6 +796,17 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
           </div>
         </div>
 
+        {/* 常驻板书 · 考场规则（一-6 落地） */}
+        <div className="ep-board-rules" style={{ marginTop: 24, textAlign: 'center' }}>
+          <div className="ep-board-rules-text" style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--chalk-dim)', lineHeight: 2.2, letterSpacing: 1 }}>
+            一、独立作答，诚信为本<br />
+            二、每题限时思考，先理解再落笔<br />
+            三、结束面试后查看成绩单
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--chalk-faint)', fontFamily: 'var(--font-display)', letterSpacing: 2 }}>
+            —— 值日生：DX
+          </div>
+        </div>
         <style jsx>{examinerStyles}</style>
       </div>
     );
@@ -700,6 +816,12 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   return (
     <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
+      <CornerStar /><CornerLamp />
+      <ChalkBox
+        wholeCount={Math.max(0, MAX_QUESTIONS - (state?.scores?.length || 0))}
+        stubCount={Math.min(state?.scores?.length || 0, MAX_QUESTIONS)}
+        animStage={state?.evaluation ? 'score' : 'idle'}
+      />
       <div className="op-card op-card-lift" style={{ marginBottom: 16, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <Space size={16}>
@@ -855,6 +977,22 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
             </Space>
           </div>
           <div style={{ padding: 16 }}>
+            {/* 励志粉笔大字 */}
+            <div className="ep-motto" style={{
+              fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--chalk)',
+              textAlign: 'center', marginBottom: 18, opacity: 0.75, letterSpacing: 2,
+            }}>
+              天道酬勤
+            </div>
+            {/* 成绩章预留位 */}
+            <div className="ep-stamp-placeholder" style={{
+              width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
+              border: '1.5px dashed var(--chalk-faint)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              color: 'var(--chalk-faint)', fontSize: 10, fontFamily: 'var(--font-pixel)',
+            }}>
+              成绩章
+            </div>
             <div className="markdown-body" style={{ fontSize: 14, color: 'var(--chalk)' }}>
               <ReactMarkdown>{state.summary.raw}</ReactMarkdown>
             </div>
