@@ -1,6 +1,6 @@
 # DX-RAG 风格基准文档（STYLE GUIDE）
 
-> 版本：v1.6 · 建档日期：2026-07-17 · 最近修订：2026-07-17
+> 版本：v1.7 · 建档日期：2026-07-17 · 最近修订：2026-07-17
 > 地位：本仓库唯一风格裁判标准。后续所有前端改动，先过本文档，再写代码。
 > 证据基线：`frontend/app/globals.css`（token 层 :9-59 + 工具类/antd 覆盖全量）与各组件实际实现；目标态依据体检报告 `docs/DX-RAG体检报告-2026-07.md` 第五章（A1-A4 / B1-B6 / C1-C4）与"复古学习 RPG · 作业本冒险"设定重构。
 > 引用体例：`【已落地·证据 file:line】` 表示代码中可核对的现状；`【目标态】` 表示已从体检报告或设定锚定、尚未实现；`【目标态·待定】` 表示两处锚点都未覆盖、不做编造。原第九章四项待定已于 2026-07-17 全部裁决（见第九章已裁决记录）。
@@ -221,6 +221,14 @@
 | hr | `--chalk-weak` | — | 装饰分割线 |
 
 - g) **板内工具类黑板变体（v1.5）**：纸底场景定义的 `.op-hint-box`（`background: var(--bg-sunken)` 米黄底）、`.op-point`（`background: var(--bg-panel)` 白底）等工具类在 `.ep-root` 内必须重置为粉笔色系。规则：`.ep-root .op-hint-box { background: var(--board-deep); border-color: var(--chalk-dim); }`，特异度 (0,2,0) 压倒全局 (0,1,0)。**黑板上禁止米黄/白色卡片底——板内一切内容使用粉笔语言。**
+- h) **粉笔盒动画与消耗状态语义（v1.7 定稿，规范先行）**：4.10-a 的粉笔盒为"进度叙事装置"（SVG 盒盖/盒身/粉笔分层），本条登记其动画参数与状态语义。全部样式规则落在 `globals.css` 的 `.ep-root` 段（交接架构纪律：黑板场景样式集中管理，组件内不写样式字面量）。
+  - ① **hover 掀盖**：悬停粉笔盒时盒盖在基准角度上再掀 8°——idle 基准 `-20deg` → hover `-28deg`；start/score 基准 `-28deg` → hover `-36deg`。260ms `--ease-pop` 回弹（即 `--transition-pop`，见 3.3）。
+  - ② **粉笔滚半圈**：hover 时第一支整支粉笔绕自身中心旋转 180°，400ms。
+  - ③ **"开始面试"跳粉笔**：点击开始面试后 `animStage='start'`，一支粉笔从盒口跳向槽沿——位移 + 旋转 90° 躺下，约 700ms，`forwards` 定格在槽沿。
+  - ④ **消耗状态语义**：整支粉笔 = 未答题目，粉笔头 = 已答题目（exam 视图 `wholeCount` = 未答题数、`stubCount` = 已答题数）；0/3/5 题三节点为验收基准。
+  - ⑤ **实现纪律**：盒盖基准角度从 inline SVG `transform` 迁移到 `.ep-root` 段 CSS 类控制（`.chalk-box-lid`/`.chalk-stick`），基准态与 hover 叠加态由类层叠表达；SVG 元素的 CSS `transform` 须配 `transform-box`（缺省参照视口而非元素自身，旋转/位移会跑偏）。
+
+  ✅ 正确：角度与位移全部由 `.ep-root` 段类与 keyframes 承载，hover 在基准类上叠加修饰类；`prefers-reduced-motion` 下动画全部退化为瞬态。❌ 错误：用 inline style 写死角度（inline 优先级压过 hover 类，hover 无法叠加）；动画无 reduced-motion 降级。
 
 ### 4.10 教室叙事装饰（v1.6·批次一）
 
@@ -228,7 +236,7 @@
 
 **分区铁律**：板外两侧属纸面世界（米黄底、墨色、贴纸语言），板内属粉笔世界（`--chalk-*` 色系），两套语言不跨界不串色。装饰总视觉权重 ≤ 10%，避让正文区/表单区/按钮区。全部装饰纯 CSS + inline SVG，禁止图片资源与动画库。
 
-- a) **粉笔盒（进度叙事装置）**：SVG 分层绘制——盒盖/盒身/每根粉笔独立层，为动画留关节。盒盖半掀靠在盒身；盒口 4–5 根粉笔圆头（白为主 + 1 根 `--chalk-yellow` + 1 根 `--brand` 红点缀）；盒身印"DX 牌无尘粉笔"（`--font-display` 小字）；盒底 2–3 粒粉笔灰像素点。粉笔消耗机制：N 题 = 盒内 N 支整粉笔，每答完一题一支变粉笔头（SVG 状态切换 + 200ms elastic 位移），面试结束全部变粉笔头。微动画：hover → 盒盖再掀 8° + 粉笔滚半圈（≤300ms）；开始面试 → 一支粉笔跳至槽沿；评分出现 → 粉笔灰飘落渐隐。`prefers-reduced-motion` 下全部瞬现。
+- a) **粉笔盒（进度叙事装置）**：SVG 分层绘制——盒盖/盒身/每根粉笔独立层，为动画留关节。盒盖半掀靠在盒身；盒口 4–5 根粉笔圆头（白为主 + 1 根 `--chalk-yellow` + 1 根 `--brand` 红点缀）；盒身印"DX 牌无尘粉笔"（`--font-display` 小字）；盒底 2–3 粒粉笔灰像素点。粉笔消耗机制：N 题 = 盒内 N 支整粉笔，每答完一题一支变粉笔头（SVG 状态切换 + 200ms elastic 位移），面试结束全部变粉笔头。微动画：hover → 盒盖再掀 8° + 粉笔滚半圈；开始面试 → 一支粉笔跳至槽沿；评分出现 → 粉笔灰飘落渐隐（参数 v1.7 定稿，见 4.9-h）。`prefers-reduced-motion` 下全部瞬现。
 - b) **板面四角角花**：左上五角星 + 三道光芒线；右下台灯或书堆粉笔简笔画。1.5px 粉笔线条、`--chalk` 60% 透明度、尺寸 ≤ 64px，不侵入正文区。
 - c) **常驻板书（一-6 落地）**：配置页板面下部"考场规则"三条（`--chalk-dim` 手写感）+ 落款"值日生：DX"；面试总结页底部粉笔大字（`--chalk` + `--font-display` 22–26px）+ 成绩章位置预留。
 - d) **书写动画参数（批次二）**：SVG `stroke-dasharray/stroke-dashoffset` 描边显影，`stroke-linecap: round`，填充 none，每段 200–400ms，依次显现、进场一次不循环。
@@ -298,6 +306,7 @@
 **修订记录**：v1.0（2026-07-17）建档；v1.1（2026-07-17）四项待定裁决定稿，第九章由"待定事项"转为"已裁决记录"，结论落第二/三/四/六章；v1.2（2026-07-17）B3 工具类归并：`.op-*` 成为唯一工具类家族，零引用 `.dx-*` 工具类与 `.kw-*` 家族死类删除，按压模型全域统一（antd 按钮 active 收编为 `translate(0,0)` + 无阴影），结论落 4.1/4.2/4.7、3.3 与第八章；v1.3（2026-07-17）B4 死代码大扫除：删除 `RibbonBackground.tsx`、`components/ui/`、`lib/utils.ts`（shadcn 死链）；删除未用 import（layout axios、SessionPanel Space、QAPanel Inbox）；删除 QAPanel `CLUSTER_PALETTE` 死常量、`isOverBudget` 死变量、`console.warn` 调试残留；globals.css 清除 `.glass-sidebar`/`.modern-card*`/`.chat-*`/`.main-content-wrapper`/`.text-*`/`#ribbon-bg` 遗留死类（`.page-header`、`.empty-state` 核实为在用，保留）；后端 routes.py 删死 import。同步重核全文 `globals.css:NNN` 行号引用（B3 删减 496 行后的漂移修正），结论落 3.1/3.2/3.3/3.4/4.1/4.8 与第八章；v1.4（2026-07-17）黑板考场批次一：粉笔色组 `--chalk`/`--chalk-bright`/`--chalk-faint`/`--chalk-weak` 收编为全局 token（`globals.css:23-26`），ExaminerPanel 私有 `--ep-*` 变量、CHALK/BOARD 常量与全部 `var(--x,#hex)` 兜底同步删除（体检 1.11 修复）；新增 3.1 粉笔色组小节与 4.9"黑板考场"组件规范（板面木框 + 粉笔槽、粉笔表单、黑板主按钮、配置页标题、假控件 Segmented 退役改静态粉笔标签——体检 3.6 修复），4.5 焦点态补黑板变体（`--chalk-bright`）；批次二预告（答题页粉笔卡片统一、像素字体分数、成绩单版式、考场规则板书装饰、考试页标题字体统一）写入 4.9 与第二章映射表；globals.css 因插入粉笔 token 全文件行号 +7，同步重核全文 `globals.css:NNN` 引用。
 v1.5（2026-07-17）黑板色彩体系重建（P0-1/P0-2/P1-3/P1-4/P2-5 验收修复）：新增 `--chalk-dim`/`--chalk-yellow`/`--board-deep` token（附 on-board 实测对比度）；`--chalk-faint` 改为 `#A09B8E` 不透明色（3.5:1）并限为辅助信息禁用于正文；`--chalk-weak` 降为纯装饰（不透明度 0.12）；确立容器规则（黑板场景禁止纸底 token、`.ep-root` color 设 `--chalk` 杜绝墨色继承、板内卡片统用 `--board-deep`）；ExaminerPanel 全组件色彩走新色阶（参考答案要点卡/要点命中卡/评分反馈卡/分数徽标/考察标签）；同步重核 3.1 粉笔色组表（new/changed 标记 + 对比度列）与 4.9 容器规则；结论落 3.1、4.9、第二章。
 v1.6（2026-07-17）教室叙事装饰（批次一）：新增 `--wall-paper`/`--sticky-yellow` token（批次二启用）；新增 4.10"教室叙事装饰"规范（粉笔盒 SVG 分层约定 + 粉笔消耗机制 + 角花规格 + 常驻板书 + 书写动画参数 + 贴纸制式）；第二章隐喻映射表新增粉笔盒/板报角花/常驻板书/墙面贴纸/考官小人/板擦 6 行；修订记录本行。
+v1.7（2026-07-17）粉笔盒动画与消耗状态语义定稿（规范先行，代码同批实现）：4.9 新增 h) 小节——hover 掀盖（基准角再掀 8°：idle `-20deg→-28deg`、start/score `-28deg→-36deg`，260ms `--ease-pop` 回弹）、hover 粉笔滚半圈（第一支整支粉笔绕自身中心 180°，400ms）、"开始面试"跳粉笔（`animStage='start'`，位移 + 旋转 90° 躺下，约 700ms，`forwards` 定格槽沿）、消耗状态语义（整支粉笔 = 未答题目、粉笔头 = 已答题目，exam 视图 `wholeCount`/`stubCount` 对应未答/已答数，0/3/5 题三节点为验收基准）、实现纪律（基准角度自 inline SVG `transform` 迁移至 `.ep-root` 段 `.chalk-box-lid`/`.chalk-stick` 类控制，SVG 元素 CSS `transform` 须配 `transform-box`，reduced-motion 全部退化为瞬态）；4.10-a 微动画参数指向 4.9-h 定稿。
 
 ---
 

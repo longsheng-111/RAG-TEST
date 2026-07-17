@@ -75,7 +75,6 @@ function ChalkBox({ wholeCount, stubCount, animStage }: {
   animStage: 'idle' | 'start' | 'score';
 }) {
   const total = wholeCount + stubCount;
-  const lidAngle = animStage === 'idle' ? -20 : -28; // hover 掀盖时再调
   return (
     <svg
       className={`chalk-box chalk-box--${animStage}`}
@@ -88,25 +87,35 @@ function ChalkBox({ wholeCount, stubCount, animStage }: {
       {/* 盒身 */}
       <rect x="15" y="32" width="140" height="44" rx="3"
         fill="var(--ink-secondary)" stroke="var(--ink)" strokeWidth="1.5" />
-      {/* 盒盖（SVG transform 倾斜） */}
-      <g transform={`rotate(${lidAngle}, 155, 32)`} style={{ transformOrigin: '155px 32px', transition: 'transform 260ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+      {/* 盒盖（角度由 globals.css .chalk-box-lid 按 stage 控制，hover 再掀 8°） */}
+      <g className="chalk-box-lid">
         <rect x="12" y="10" width="146" height="22" rx="3"
           fill="var(--ink)" stroke="var(--ink)" strokeWidth="1.5" />
       </g>
-      {/* 粉笔（从盒口伸出） */}
+      {/* 粉笔（从盒口伸出；chalk-stick--first 为下一支整支，hover 滚半圈；
+          y/height/transform 过渡集中在 globals.css .chalk-stick） */}
       {Array.from({ length: total }).map((_, i) => {
         const isStub = i < stubCount;
         const colors = ['var(--chalk-bright)', 'var(--chalk-yellow)', 'var(--brand)', 'var(--chalk-bright)', 'var(--chalk-bright)'];
+        const cls = `chalk-stick${isStub ? ' chalk-stick--stub' : ''}${i === stubCount ? ' chalk-stick--first' : ''}`;
         return (
           <rect key={i}
+            className={cls}
             x={22 + i * 14} y={isStub ? 34 : 14}
             width="8" height={isStub ? 12 : 36} rx="3"
             fill={colors[i % colors.length]}
             stroke="rgba(0,0,0,0.3)" strokeWidth="0.8"
-            style={{ transition: 'y 200ms cubic-bezier(0.34,1.56,0.64,1), height 200ms cubic-bezier(0.34,1.56,0.64,1)' }}
           />
         );
       })}
+      {/* 起跳粉笔（animStage==='start' 时跳出盒口，动画见 globals.css ep-chalk-jump） */}
+      {animStage === 'start' && (
+        <rect className="chalk-jumper"
+          x="30" y="14" width="8" height="36" rx="3"
+          fill="var(--chalk-bright)"
+          stroke="rgba(0,0,0,0.3)" strokeWidth="0.8"
+        />
+      )}
       {/* 盒身文字 */}
       <text x="90" y="68" textAnchor="middle"
         fontFamily="var(--font-display)" fontSize="6" fill="var(--chalk)" opacity="0.7">
@@ -669,6 +678,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   const [loading, setLoading] = useState(false);
   const [targetPosition, setTargetPosition] = useState('');
   const [topic, setTopic] = useState('');
+  const [chalkStage, setChalkStage] = useState<'idle' | 'start'>('idle'); // 粉笔盒起跳动画（仅配置页）
 
   const fetchSessionConfig = useCallback(async () => {
     try {
@@ -703,6 +713,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   const startExam = async () => {
     if (!targetPosition.trim() || !topic.trim()) return;
     setLoading(true);
+    setChalkStage('start');
     try {
       const res = await axios.post('/api/exam/start', {
         session_id: sessionId,
@@ -716,6 +727,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
       setAnswer('');
     } catch (err: any) {
       alert(err.response?.data?.detail || '启动面试失败');
+      setChalkStage('idle');
     } finally {
       setLoading(false);
     }
@@ -749,7 +761,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
     return (
       <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
         <CornerStar /><CornerLamp />
-        <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage="idle" />
+        <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
         <div className="op-card">
           <div className="op-card-header ep-config-header">
             <span>配置模拟面试</span>

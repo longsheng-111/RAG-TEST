@@ -871,6 +871,13 @@ h4 { font-size: 14px; }
     transition: opacity 100ms ease !important;
   }
   .ep-root .chalk-box:hover { transform: none; }
+  /* 粉笔盒互动件：过渡/动画整体退化（特异度高于上方 * 规则，覆盖其 opacity 过渡） */
+  .ep-root .chalk-box .chalk-box-lid,
+  .ep-root .chalk-box .chalk-stick,
+  .ep-root .chalk-box .chalk-jumper {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* ============================================================
@@ -983,6 +990,42 @@ h4 { font-size: 14px; }
 }
 .ep-root .chalk-box:hover {
   transform: scale(1.06);
+}
+
+/* ---- 粉笔盒互动动画（v1.6·批次二）：hover 掀盖 / 滚粉笔 / 起跳 ---- */
+/* 盒盖基准角：CSS transform 取代原 SVG attribute；view-box 下原点 (155,32) */
+.ep-root .chalk-box-lid {
+  transform-box: view-box;
+  transform-origin: 155px 32px;
+  transition: transform 260ms var(--ease-pop);
+}
+.ep-root .chalk-box--idle .chalk-box-lid { transform: rotate(-20deg); }
+.ep-root .chalk-box--start .chalk-box-lid,
+.ep-root .chalk-box--score .chalk-box-lid { transform: rotate(-28deg); }
+/* hover 再掀 8° */
+.ep-root .chalk-box--idle:hover .chalk-box-lid { transform: rotate(-28deg); }
+.ep-root .chalk-box--start:hover .chalk-box-lid,
+.ep-root .chalk-box--score:hover .chalk-box-lid { transform: rotate(-36deg); }
+/* 粉笔：fill-box 使 rotate 绕自身中心；y/height 过渡自组件 inline 样式迁来，
+   与 transform 过渡并列（inline transition 会盖掉类规则，故集中于此） */
+.ep-root .chalk-box .chalk-stick {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: y 200ms var(--ease-pop), height 200ms var(--ease-pop), transform 400ms var(--ease-pop);
+}
+.ep-root .chalk-box:hover .chalk-stick--first {
+  transform: rotate(180deg);
+}
+/* “开始面试”起跳粉笔：抛物线跃出盒口，躺到槽沿 */
+.ep-root .chalk-jumper {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ep-chalk-jump 700ms var(--ease-pop) forwards;
+}
+@keyframes ep-chalk-jump {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  55% { transform: translate(34px, -26px) rotate(45deg); }
+  100% { transform: translate(64px, 44px) rotate(90deg); }
 }
 @keyframes chalk-pop {
   0% { transform: translateY(0); }
