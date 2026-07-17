@@ -947,3 +947,37 @@ h4 { font-size: 14px; }
   background: var(--chalk-weak) !important;
   border-radius: 3px !important;
 }
+
+/* ---- 评分反馈结构化卡片（EvaluationCard 子组件） ---- */
+.ep-root .ep-eval-section { margin-bottom: 14px; }
+.ep-root .ep-eval-section:last-child { margin-bottom: 0; }
+.ep-root .ep-eval-label {
+  color: var(--chalk-yellow);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.ep-root .ep-eval-body {
+  color: var(--chalk);
+  font-size: 14px;
+  line-height: 1.7;
+  padding-left: 10px;
+  border-left: 2px solid var(--chalk-dim);
+}
+.ep-root .ep-eval-body p,
+.ep-root .ep-eval-body li { color: var(--chalk); }
+.ep-root .ep-eval-body strong,
+.ep-root .ep-eval-body b { color: var(--chalk-yellow); }
+
+/* ---- 考察标签芯片 ---- */
+.ep-root .ep-expectation-tag {
+  color: var(--chalk);
+  border-color: var(--chalk-dim);
+}
+.ep-root .ep-expectation-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
