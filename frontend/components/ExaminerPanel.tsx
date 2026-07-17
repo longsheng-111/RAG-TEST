@@ -142,7 +142,7 @@ function ChalkBox({ wholeCount, stubCount, animStage }: {
   );
 }
 
-/** 板面左上角花：五角星 + 三道光芒（粉笔简笔画） */
+/** 板面左上角花：五角星 + 三道光芒（粉笔简笔画·书写动画） */
 function CornerStar() {
   return (
     <svg viewBox="0 0 64 64" width="56" height="56"
@@ -150,27 +150,37 @@ function CornerStar() {
       aria-hidden="true"
     >
       <polygon points="32,8 38,26 56,26 42,38 48,56 32,46 16,56 22,38 8,26 26,26"
-        fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinejoin="round" />
-      <line x1="32" y1="56" x2="32" y2="64" stroke="var(--chalk)" strokeWidth="1" opacity="0.6" />
-      <line x1="8" y1="26" x2="0" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4" />
-      <line x1="56" y1="26" x2="64" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4" />
+        fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinejoin="round"
+        className="ep-write-path" style={{ animationDelay: '0ms' }} />
+      <line x1="32" y1="56" x2="32" y2="64" stroke="var(--chalk)" strokeWidth="1" opacity="0.6"
+        className="ep-write-path" style={{ animationDelay: '400ms' }} />
+      <line x1="8" y1="26" x2="0" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4"
+        className="ep-write-path" style={{ animationDelay: '500ms' }} />
+      <line x1="56" y1="26" x2="64" y2="22" stroke="var(--chalk)" strokeWidth="1" opacity="0.4"
+        className="ep-write-path" style={{ animationDelay: '600ms' }} />
     </svg>
   );
 }
 
-/** 板面右下角花：台灯（粉笔简笔画） */
+/** 板面右下角花：台灯（粉笔简笔画·书写动画） */
 function CornerLamp() {
   return (
     <svg viewBox="0 0 64 64" width="56" height="56"
       style={{ position: 'absolute', right: 12, bottom: 40, opacity: 0.5, pointerEvents: 'none' }}
       aria-hidden="true"
     >
-      <ellipse cx="32" cy="52" rx="20" ry="3" fill="none" stroke="var(--chalk)" strokeWidth="1.5" />
-      <line x1="16" y1="52" x2="22" y2="28" stroke="var(--chalk)" strokeWidth="1.2" />
-      <line x1="48" y1="52" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1.2" />
-      <path d="M22,28 Q32,8 42,28" fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="22" y1="28" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1" />
-      <circle cx="32" cy="22" r="2" fill="var(--chalk-yellow)" opacity="0.7" />
+      <ellipse cx="32" cy="52" rx="20" ry="3" fill="none" stroke="var(--chalk)" strokeWidth="1.5"
+        className="ep-write-path" style={{ animationDelay: '0ms' }} />
+      <line x1="16" y1="52" x2="22" y2="28" stroke="var(--chalk)" strokeWidth="1.2"
+        className="ep-write-path" style={{ animationDelay: '300ms' }} />
+      <line x1="48" y1="52" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1.2"
+        className="ep-write-path" style={{ animationDelay: '400ms' }} />
+      <path d="M22,28 Q32,8 42,28" fill="none" stroke="var(--chalk)" strokeWidth="1.5" strokeLinecap="round"
+        className="ep-write-path" style={{ animationDelay: '500ms' }} />
+      <line x1="22" y1="28" x2="42" y2="28" stroke="var(--chalk)" strokeWidth="1"
+        className="ep-write-path" style={{ animationDelay: '700ms' }} />
+      <circle cx="32" cy="22" r="2" fill="var(--chalk-yellow)" opacity="0.7"
+        className="ep-write-dot" style={{ animationDelay: '900ms' }} />
     </svg>
   );
 }

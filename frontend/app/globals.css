@@ -875,12 +875,19 @@ h4 { font-size: 14px; }
     transition: opacity 100ms ease !important;
   }
   .ep-root .chalk-box:hover { transform: none; }
-  /* 粉笔盒互动件：过渡/动画整体退化（特异度高于上方 * 规则，覆盖其 opacity 过渡） */
+  /* 粉笔盒互动件 + 书写动画：过渡/动画整体退化 */
   .ep-root .chalk-box .chalk-box-lid,
   .ep-root .chalk-box .chalk-stick,
   .ep-root .chalk-box .chalk-jumper {
     animation: none !important;
     transition: none !important;
+  }
+  .ep-root .ep-write-path,
+  .ep-root .ep-write-dot {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 }
 
@@ -1038,6 +1045,31 @@ h4 { font-size: 14px; }
 .ep-root .ep-eval-body li { color: var(--chalk); }
 .ep-root .ep-eval-body strong,
 .ep-root .ep-eval-body b { color: var(--chalk-yellow); }
+
+/* ---- 教室叙事 · 书写动画（v1.7·批次二） ---- */
+/* SVG stroke-dasharray 描边显影：圆头笔帽、填充 none、逐段依次显现 */
+.ep-root .ep-write-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: ep-write-in 500ms var(--ease-base) forwards;
+}
+.ep-root .ep-write-dot {
+  animation: ep-write-dot-in 300ms var(--ease-pop) forwards;
+}
+@keyframes ep-write-in {
+  from {
+    stroke-dashoffset: var(--write-len, 300);
+    stroke-dasharray: var(--write-len, 300);
+  }
+  to {
+    stroke-dashoffset: 0;
+    stroke-dasharray: var(--write-len, 300);
+  }
+}
+@keyframes ep-write-dot-in {
+  from { opacity: 0; r: 0; }
+  to { opacity: 0.7; r: 2; }
+}
 
 /* ---- 教室叙事 · 粉笔盒（v1.6·批次一） ---- */
 .ep-root .chalk-box {
