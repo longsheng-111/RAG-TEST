@@ -280,6 +280,7 @@ function LeftBulletinBoard({ isExam }: { isExam?: boolean }) {
   return (
     <div className={`ep-bulletin-board ep-bulletin-board--left${isExam ? ' ep-bulletin-board--exam-left' : ''}`} aria-hidden="true">
       <div className="ep-board-hanger" />
+      <div className="ep-bulletin-board-inner">
 
       {/* 第 1 层：今日课表（升级：140-160px 宽，红色图钉） */}
       <div className="ep-board-item ep-board-item--schedule ep-board-item--first"
@@ -333,6 +334,7 @@ function LeftBulletinBoard({ isExam }: { isExam?: boolean }) {
           </svg>
         </div>
       </div>
+      </div>{/* /ep-bulletin-board-inner */}
     </div>
   );
 }
@@ -342,6 +344,7 @@ function RightBulletinBoard({ isExam }: { isExam?: boolean }) {
   return (
     <div className={`ep-bulletin-board ep-bulletin-board--right${isExam ? ' ep-bulletin-board--exam-right' : ''}`} aria-hidden="true">
       <div className="ep-board-hanger" />
+      <div className="ep-bulletin-board-inner">
 
       {/* 第 1 层：倒计时便利贴（升级：同课表量级，红色图钉） */}
       <div className="ep-board-item ep-board-item--countdown ep-board-item--first"
@@ -391,6 +394,7 @@ function RightBulletinBoard({ isExam }: { isExam?: boolean }) {
           </div>
         </div>
       </div>
+      </div>{/* /ep-bulletin-board-inner */}
     </div>
   );
 }
@@ -979,7 +983,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   if (phase === 'config') {
     return (
       <div className="ep-wall">
-        <LeftBulletinBoard /><RightBulletinBoard />
+        <LeftBulletinBoard />
         <div className="ep-root" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
           <CornerStar /><CornerLamp />
           <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
@@ -1042,6 +1046,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
         </div>
         <style jsx>{examinerStyles}</style>
       </div>
+        <RightBulletinBoard />
       </div>
     );
   }
@@ -1050,7 +1055,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
   return (
     <div className="ep-wall">
-      <LeftBulletinBoard isExam /><RightBulletinBoard isExam />
+      <LeftBulletinBoard isExam />
       <div className="ep-root" style={{ maxWidth: 900, margin: '0 auto', padding: '24px', minHeight: '100%' }}>
       <CornerStar /><CornerLamp />
       <ChalkBox
@@ -1265,6 +1270,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
 
       <style jsx>{examinerStyles}</style>
     </div>
+      <RightBulletinBoard isExam />
     </div>
   );
 }

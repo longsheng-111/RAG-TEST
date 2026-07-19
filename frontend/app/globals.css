@@ -899,17 +899,23 @@ h4 { font-size: 14px; }
 }
 
 /* ============================================================
-   教室叙事 · 毛毡公告栏（v1.8·批次二）
-   板外两侧：软木/毛毡底 + 3 层纵向构图 + 挂绳木条收边
-   1280px 以下整体隐藏；1440px + 900px 黑板只保留首层
+   教室叙事 · 毛毡公告栏（v1.9·批次二 布局根治）
+   flex 三列结构：[装饰列·左] [黑板] [装饰列·右]
+   装饰列占真实布局空间，容器查询按列实际宽度三级降级
+   充足 ≥200px / 紧凑 140–200px / 不足 <140px
    ============================================================ */
 
-/* 墙面基底：毛毡色 + SVG 噪点纹理 */
+/* ---- 墙面基底：flex 行容器 ---- */
 .ep-wall {
-  position: relative;
+  position: relative;          /* 为 ::before 噪点层保留 */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(16px, 2vw, 32px);
   min-height: 100%;
+  padding: 20px 16px;
   background: var(--wall-felt, #EBD9BA);
-  /* 噪点纹理：CSS 生成 SVG feTurbulence，≤5% */
   --noise-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 .ep-wall::before {
@@ -922,12 +928,28 @@ h4 { font-size: 14px; }
   z-index: 0;
 }
 
-/* ---- 公告栏侧边容器 ---- */
-.ep-bulletin-board {
-  position: absolute;
-  top: 0;
-  bottom: 0;
+/* ---- 黑板（flex 子项）：不伸缩，z 轴高于装饰列 ---- */
+.ep-wall > .ep-root {
+  flex: 0 0 auto;
   z-index: 2;
+  min-width: 640px;
+}
+
+/* ---- 视觉顺序 ---- */
+.ep-wall > .ep-bulletin-board--left  { order: 1; }
+.ep-wall > .ep-root                    { order: 2; }
+.ep-wall > .ep-bulletin-board--right { order: 3; }
+
+/* ---- 公告栏装饰列 ---- */
+.ep-bulletin-board {
+  flex: 0 1 200px;
+  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
+  container-type: inline-size;
+  container-name: bulletin-board;
+  position: relative;
+  z-index: 1;
   pointer-events: none;
   user-select: none;
   display: flex;
@@ -935,18 +957,21 @@ h4 { font-size: 14px; }
   align-items: center;
   padding-top: 40px;
   padding-bottom: 24px;
+}
+.ep-bulletin-board--left  { order: 1; }
+.ep-bulletin-board--right { order: 3; }
+
+/* 公告栏内层（容器查询控制显隐与过渡） */
+.ep-bulletin-board-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 14px;
-}
-.ep-bulletin-board--left {
-  left: 0;
-  width: 190px;
-}
-.ep-bulletin-board--right {
-  right: 0;
-  width: 190px;
+  width: 100%;
+  transition: opacity 200ms ease;
 }
 
-/* 挂绳/木条收边 */
+/* ---- 挂绳/木条 ---- */
 .ep-board-hanger {
   position: absolute;
   top: 16px;
@@ -956,7 +981,6 @@ h4 { font-size: 14px; }
   background: var(--ink);
   z-index: 3;
 }
-/* 两端圆钉 */
 .ep-board-hanger::before,
 .ep-board-hanger::after {
   content: '';
@@ -1083,7 +1107,6 @@ h4 { font-size: 14px; }
 }
 .ep-checklist-item.ep--checked::before {
   background: var(--bg-sunken);
-  /* 手写勾：CSS 伪勾 */
   box-shadow: inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--ink);
 }
 
@@ -1155,8 +1178,6 @@ h4 { font-size: 14px; }
   color: var(--ink-faint);
   margin-top: 2px;
 }
-
-/* 奖状保留胶带贴角 */
 .ep-cert-tape {
   position: absolute;
   width: 12px;
@@ -1206,15 +1227,38 @@ h4 { font-size: 14px; }
   transform: rotate(0deg) translate(-1px, -1px) !important;
 }
 
-/* ---- 响应式 ---- */
-/* ≤1280px：两侧公告栏整体隐藏 */
-@media (max-width: 1280px) {
-  .ep-bulletin-board { display: none; }
+/* ============================================================
+   容器查询：三级降级（按装饰列实际 px 宽度）
+   充足 ≥200 → 全部显示 / 紧凑 140–200 → 仅首层 85%
+   不足 <140 → 渐隐
+   ============================================================ */
+
+/* 充足态 */
+@container bulletin-board (min-width: 200px) {
+  .ep-board-item { display: block; }
 }
-/* ≤1440px + 黑板 900px 宽（exam）：每侧只留第一层 */
-@media (max-width: 1440px) {
-  .ep-bulletin-board--exam-left .ep-board-item:not(.ep-board-item--first),
-  .ep-bulletin-board--exam-right .ep-board-item:not(.ep-board-item--first) {
+
+/* 紧凑态：仅首层 + 缩至 85% */
+@container bulletin-board (min-width: 140px) and (max-width: 199px) {
+  .ep-board-item:not(.ep-board-item--first) {
+    display: none;
+  }
+  .ep-board-item--first {
+    transform: scale(0.85);
+  }
+}
+
+/* 不足态：渐隐 */
+@container bulletin-board (max-width: 139px) {
+  .ep-bulletin-board-inner {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* 极窄视口安全网（<720px 装饰列完全移除） */
+@media (max-width: 720px) {
+  .ep-bulletin-board {
     display: none;
   }
 }
