@@ -164,7 +164,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         );
       case 'upload':
         return (
-          <div className="page-container" style={{ maxWidth: 720 }}>
+          <div className="page-container page-container--narrow">
             <FileUpload collectionName={selectedCollection} />
           </div>
         );

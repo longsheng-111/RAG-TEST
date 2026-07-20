@@ -592,6 +592,11 @@ h4 { font-size: 14px; }
   overflow-y: auto;
 }
 
+/* 窄页变体：上传页等单列表单场景（收编 layout.tsx 内联 maxWidth:720） */
+.page-container--narrow {
+  max-width: 720px;
+}
+
 /* ---- QA 答案列：超宽档居中上限（v1.9.4 · 布局不变量 4.12-b） ---- */
 .qa-answer-area {
   max-width: 1080px;
