@@ -9,12 +9,14 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - chroma_data:/app/chroma_db
+      - vector_data:/app/vector_db
       - model_cache:/app/models
       - uploads_data:/app/uploads
+      - session_data:/app/data
       - ./.env:/app/.env:ro
     environment:
-      - CHROMA_PERSIST_DIR=/app/chroma_db
+      - VECTOR_PERSIST_DIR=/app/vector_db
+      - SESSION_DIR=/app/data/sessions
       - UPLOAD_DIR=/app/uploads
       - EMBED_MODEL=BAAI/bge-small-zh-v1.5
     restart: unless-stopped
@@ -39,9 +41,11 @@ services:
     restart: unless-stopped
 
 volumes:
-  chroma_data:
+  vector_data:
     driver: local
   model_cache:
     driver: local
   uploads_data:
+    driver: local
+  session_data:
     driver: local
