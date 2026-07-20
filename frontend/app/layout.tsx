@@ -114,7 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {qaMode === 'qa' ? '用户提问，AI 检索回答' : 'AI 出题，用户回答并评分'}
               </Text>
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto' }}>
               {activeSessionId ? (
                 qaMode === 'qa' ? (
                   <QAPanel
