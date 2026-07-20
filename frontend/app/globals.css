@@ -928,9 +928,9 @@ h4 { font-size: 14px; }
   z-index: 0;
 }
 
-/* ---- 黑板（flex 子项）：不伸缩，z 轴高于装饰列 ---- */
+/* ---- 黑板（flex 子项）：弹性填充剩余空间，z 轴高于装饰列 ---- */
 .ep-wall > .ep-root {
-  flex: 0 0 auto;
+  flex: 1 1 0%;
   z-index: 2;
   min-width: 640px;
 }
