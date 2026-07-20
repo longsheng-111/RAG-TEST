@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: dx-rag-backend
+    env_file: .env
     ports:
       - "8000:8000"
     volumes:
@@ -19,6 +18,9 @@ services:
       - SESSION_DIR=/app/data/sessions
       - UPLOAD_DIR=/app/uploads
       - EMBED_MODEL=BAAI/bge-small-zh-v1.5
+      # 模型缓存持久化：容器内下载走 HF 镜像端点（vector_store.py:14-15），HF_HOME 为关键项
+      - MODELSCOPE_CACHE=/app/models
+      - HF_HOME=/app/models/hf
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]

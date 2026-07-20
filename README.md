@@ -46,7 +46,7 @@ cp .env.example .env   # Windows 用 copy .env.example .env
 - `DEEPSEEK_API_KEY`：**必需**，知识问答与模拟面试的生成都依赖它。
 - `DASHSCOPE_API_KEY`：仅当需要处理图片型 PDF（OCR）时配置。
 
-> 提醒：`.env.example` 中 `CHROMA_COLLECTION` / `CHROMA_PERSIST_DIR` 是 ChromaDB 时代的历史键名，当前代码已不读取；对应配置项现为 `VECTOR_COLLECTION` / `VECTOR_PERSIST_DIR`，一般保持默认即可。
+> 提醒：`.env.example` 的向量库配置项为 `VECTOR_COLLECTION` / `VECTOR_PERSIST_DIR`（ChromaDB 时代的 `CHROMA_*` 键名已于 2026-07-20 退役，代码不再读取），一般保持默认即可。
 
 ### macOS
 
