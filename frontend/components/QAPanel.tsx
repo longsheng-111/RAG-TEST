@@ -1153,8 +1153,7 @@ export default function QAPanel({
 
   return (
     <div ref={rootRef} className="qa-panel-root" style={{
-      maxWidth: 1400,
-      margin: '0 auto',
+      width: '100%',
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
