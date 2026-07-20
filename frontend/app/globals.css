@@ -592,6 +592,13 @@ h4 { font-size: 14px; }
   overflow-y: auto;
 }
 
+/* ---- QA 答案列：超宽档居中上限（v1.9.4 · 布局不变量 4.12-b） ---- */
+.qa-answer-area {
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* ============================================================
    Other-page utility classes (.op-*)
    ============================================================ */
@@ -933,6 +940,7 @@ h4 { font-size: 14px; }
   flex: 1 1 0%;
   z-index: 2;
   min-width: 560px;
+  max-width: 1200px;
 }
 
 /* ---- 视觉顺序 ---- */

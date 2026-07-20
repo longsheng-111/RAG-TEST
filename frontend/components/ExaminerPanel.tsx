@@ -984,7 +984,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
     return (
       <div className="ep-wall">
         <LeftBulletinBoard />
-        <div className="ep-root" style={{ margin: '0 auto', padding: '40px 24px', minHeight: '100%' }}>
+        <div className="ep-root" style={{ padding: '40px 24px', minHeight: '100%' }}>
           <CornerStar /><CornerLamp />
           <ChalkBox wholeCount={MAX_QUESTIONS} stubCount={0} animStage={chalkStage} />
         <div className="op-card">
@@ -1056,7 +1056,7 @@ export default function ExaminerPanel({ sessionId, collectionName }: Props) {
   return (
     <div className="ep-wall">
       <LeftBulletinBoard isExam />
-      <div className="ep-root" style={{ margin: '0 auto', padding: '24px', minHeight: '100%' }}>
+      <div className="ep-root" style={{ padding: '24px', minHeight: '100%' }}>
       <CornerStar /><CornerLamp />
       <ChalkBox
         wholeCount={Math.max(0, MAX_QUESTIONS - (state?.scores?.length || 0))}
