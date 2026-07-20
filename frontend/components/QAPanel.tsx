@@ -1684,7 +1684,7 @@ export default function QAPanel({
 
         /* Citation popup */
         .qa-citation-popup {
-          position: absolute;
+          /* 保持 in-flow：外壳 popupStyle 负责定位，本类若 absolute 会使外壳塌缩 0×0、translate(-50%) 退化（v1.9.6） */
           width: 320px;
           background: var(--bg-panel);
           border: 1.5px solid var(--ink);
