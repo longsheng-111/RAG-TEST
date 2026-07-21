@@ -12,6 +12,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
+# rewrites 在 next build 期内联进 routes-manifest，运行期 env 不生效——必须用 build ARG 注入
+ARG API_INTERNAL_URL=http://localhost:8000
+ENV API_INTERNAL_URL=$API_INTERNAL_URL
 RUN npm run build
 
 # ---- 运行阶段 ----

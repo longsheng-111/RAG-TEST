@@ -27,16 +27,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      # 首次启动需下载嵌入模型（数百 MB），预热完成前 uvicorn 不监听端口
+      start_period: 300s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # next.config rewrites 为构建期内联（见 frontend/Dockerfile）
+        API_INTERNAL_URL: http://backend:8000
     container_name: dx-rag-frontend
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
+      - API_INTERNAL_URL=http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
